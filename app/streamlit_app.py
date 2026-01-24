@@ -79,7 +79,7 @@ div[role='radiogroup'] > label:hover {
 st.sidebar.title("📊 Navigation")
 page = st.sidebar.radio(
     "Go to:",
-    ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 Feature Importance", "🔍 SHAP Explainability","📚 Admin / Lecturer Prompts", "ℹ️ About"]
+    ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 Feature Importance", "🔍 SHAP Explainability","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
 )
 
 # ------------------------------------------------------------
@@ -462,6 +462,76 @@ elif page == "📚 Admin / Lecturer Prompts":
         st.markdown("---")
         st.subheader("💡 Assistant Response")
         st.markdown(st.session_state["prompt_response"])
+
+# ------------------------------------------------------------
+# ---------------------- Reviews & Feedback---------------------------
+# ------------------------------------------------------------
+
+elif page == "⭐ Reviews & Feedback":
+    st.title("⭐ User Reviews & Feedback")
+    st.markdown(
+        "We value your feedback. Please leave a review after using the application."
+    )
+
+    # ---------- Review Form ----------
+    with st.form("review_form"):
+        st.subheader("✍️ Submit a Review")
+
+        name = st.text_input("Your Name (optional)")
+        role = st.selectbox(
+            "Your Role",
+            ["Student", "Lecturer", "Administrator", "Researcher", "Other"]
+        )
+        rating = st.slider("Overall Rating", 1, 5, 4)
+        review_text = st.text_area("Your Review", height=120)
+
+        submit_review = st.form_submit_button("📨 Submit Review")
+
+    if submit_review:
+        if review_text.strip() == "":
+            st.warning("⚠ Please write a short review before submitting.")
+        else:
+            save_review({
+                "name": name if name else "Anonymous",
+                "role": role,
+                "rating": rating,
+                "review": review_text,
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M")
+            })
+            st.success("✅ Thank you! Your review has been submitted.")
+
+    st.markdown("---")
+
+    # ---------- Display Reviews ----------
+    st.subheader("📢 What Users Are Saying")
+
+    reviews_df = load_reviews()
+
+    if reviews_df.empty:
+        st.info("No reviews yet. Be the first to leave feedback!")
+    else:
+        # Show newest first
+        reviews_df = reviews_df.sort_values("timestamp", ascending=False)
+
+        for _, row in reviews_df.iterrows():
+            st.markdown(
+                f"""
+                <div style="
+                    background: rgba(245,245,245,0.8);
+                    padding: 15px;
+                    margin-bottom: 12px;
+                    border-radius: 12px;
+                    border-left: 5px solid #FFD93D;
+                ">
+                    <strong>{row['name']}</strong> · {row['role']}  
+                    <br>
+                    ⭐{"⭐" * (row['rating'] - 1)}
+                    <p style="margin-top:8px;">{row['review']}</p>
+                    <small style="color:#666;">{row['timestamp']}</small>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
 
 # ------------------------------------------------------------
