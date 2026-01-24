@@ -54,7 +54,6 @@ h1, h2, h3 {
     transition: 0.3s;
 }
 
-/* Sidebar Radio Buttons */
 div[role='radiogroup'] > label {
     background: rgba(255,255,255,0.4);
     padding: 10px 15px;
@@ -62,11 +61,15 @@ div[role='radiogroup'] > label {
     margin-bottom: 8px;
     font-size: 17px;
     font-weight: 600;
+
+    /* Force same width */
+    display: inline-block;
+    width: 250px;  /* adjust width as needed */
+    text-align: left;
 }
 
 div[role='radiogroup'] > label:hover {
     background: rgba(0,0,0,0.15);
-}
 </style>
 """, unsafe_allow_html=True)
 
