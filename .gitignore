@@ -21,9 +21,8 @@ Thumbs.db
 
 # Data files (optional, if dataset is large or private)
 data/*.csv
-output/models/
-output/figures/
-output/reports/
+outputs/figures/
+outputs/reports/
 
 # Logs
 *.log
