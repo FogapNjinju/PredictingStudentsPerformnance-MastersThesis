@@ -1,0 +1,33 @@
+1. Summarize this student's academic risk profile and propose possible interventions, 
+support actions, or advising strategies an instructor or academic department 
+could use to help the student succeed.
+
+2. Provide a professional summary of this student's academic risk level based on the prediction, 
+KPIs, and SHAP values. Recommend specific interventions the academic team should consider..
+
+3. Generate a formal report for academic advisors summarizing the student’s 
+predicted performance, 
+key risk factors, and personalised recommendations for academic support.
+
+4. What actions can lecturers take to support this student based on 
+their prediction and SHAP feature influence? 
+Include suggestions for classroom support, follow-up checks, and communication strategies
+
+5. Analyze which course-related features contributed most to the student's academic risk 
+and suggest course-level adjustments or follow-ups the lecturer can apply.
+
+6. Interpret this student’s fee compliance and its impact on predicted performance. 
+Suggest finance-related interventions or communications for the admin office/
+
+7. Create a structured meeting agenda for an advisor–student meeting based on 
+this prediction and the student’s KPIs. Include discussion points and action items
+
+8. Develop a short-term and long-term monitoring plan for this at-risk student, 
+based on SHAP importance and their academic indicators.
+
+9. Based on the student’s profile, recommend which campus support services 
+(counseling, tutoring, advising, financial aid) they should be referred to, with justification.
+
+10. Based on the student’s profile, recommend which campus support services
+ (counseling, tutoring, advising, financial aid) they should be referred to,
+  with justification.

@@ -1,0 +1,29 @@
+
+---
+## **.gitignore**
+```gitignore
+# Byte-compiled / Python cache files
+__pycache__/
+*.py[cod]
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Environment files
+env/
+venv/
+*.env
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Data files (optional, if dataset is large or private)
+data/*.csv
+output/models/
+output/figures/
+output/reports/
+
+# Logs
+*.log
