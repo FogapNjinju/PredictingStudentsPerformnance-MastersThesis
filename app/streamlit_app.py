@@ -179,6 +179,8 @@ help_course = "Degree program code: 33=Agronomy, 171=Design, 8014=Nursing, 9070=
 help_prevqual = "Highest previous qualification (encoded)."
 help_parents_qual = "Parent education level (encoded)."
 help_parents_occ = "Parent job (encoded)."
+MOTHERS_OCCUPATION = "1 - Secondary Education - 12th Year of Schooling or Eq. 2 - Higher Education - Bachelor's Degree 3 - Higher Education - Degree 4 - Higher Education - Master's 5 - Higher Education - Doctorate 6 - Frequency of Higher Education 9 - 12th Year of Schooling - Not Completed 10 - 11th Year of Schooling - Not Completed 11 - 7th Year (Old) 12 - Other - 11th Year of Schooling 14 - 10th Year of Schooling 18 - General commerce course 19 - Basic Education 3rd Cycle (9th/10th/11th Year) or Equiv. 22 - Technical-professional course 26 - 7th year of schooling 27 - 2nd cycle of the general high school course 29 - 9th Year of Schooling - Not Completed 30 - 8th year of schooling 34 - Unknown 35 - Can't read or write 36 - Can read without having a 4th year of schooling 37 - Basic education 1st cycle (4th/5th year) or equiv. 38 - Basic Education 2nd Cycle (6th/7th/8th Year) or Equiv. 39 - Technological specialization course 40 - Higher education - degree (1st cycle) 41 - Specialized higher studies course 42 - Professional higher technical course 43 - Higher Education - Master (2nd cycle) 44 - Higher Education - Doctorate (3rd cycle)"
+FATHERS_OCCUPATION = "1 - Secondary Education - 12th Year of Schooling or Eq. 2 - Higher Education - Bachelor's Degree 3 - Higher Education - Degree 4 - Higher Education - Master's 5 - Higher Education - Doctorate 6 - Frequency of Higher Education 9 - 12th Year of Schooling - Not Completed 10 - 11th Year of Schooling - Not Completed 11 - 7th Year (Old) 12 - Other - 11th Year of Schooling 13 - 2nd year complementary high school course 14 - 10th Year of Schooling 18 - General commerce course 19 - Basic Education 3rd Cycle (9th/10th/11th Year) or Equiv. 20 - Complementary High School Course 22 - Technical-professional course 25 - Complementary High School Course - not concluded 26 - 7th year of schooling 27 - 2nd cycle of the general high school course 29 - 9th Year of Schooling - Not Completed 30 - 8th year of schooling 31 - General Course of Administration and Commerce 33 - Supplementary Accounting and Administration 34 - Unknown 35 - Can't read or write 36 - Can read without having a 4th year of schooling 37 - Basic education 1st cycle (4th/5th year) or equiv. 38 - Basic Education 2nd Cycle (6th/7th/8th Year) or Equiv. 39 - Technological specialization course 40 - Higher education - degree (1st cycle) 41 - Specialized higher studies course 42 - Professional higher technical course 43 - Higher Education - Master (2nd cycle) 44 - Higher Education - Doctorate (3rd cycle)"
 help_admission_grade = "Score obtained at admission (0–200)."
 help_tuition = "1 = Up to date | 0 = Behind on tuition fees"
 help_age = "Age at enrollment"
@@ -206,8 +208,8 @@ if page == "🏠 Home (Prediction)":
         col1, col2, col3 = st.columns(3)
         with col1:
             Age_at_enrollment = st.number_input("Age at Enrollment", 14, 100, 18, help = help_age)
-            Mothers_occupation = st.number_input("Mother's Occupation", 0, 100, help = help_parents_occ)
-            Fathers_occupation = st.number_input("Father's Occupation", 0, 100, help = help_parents_occ)
+            Mothers_occupation = st.number_input("Mother's Occupation", 0, 100, help = MOTHERS_OCCUPATION)
+            Fathers_occupation = st.number_input("Father's Occupation", 0, 100, help = FATHERS_OCCUPATION)
         with col2:
             Admission_grade = st.number_input("Admission Grade", 0.0, 200.0, help = help_admission_grade)
             Tuition_fees_up_to_date = st.selectbox("Tuition Fees Up-to-Date?", [0, 1] , help = help_tuition)
