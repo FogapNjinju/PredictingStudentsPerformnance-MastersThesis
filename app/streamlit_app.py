@@ -564,17 +564,109 @@ elif page == "⭐ Reviews & Feedback":
 # ------------------------------------------------------------
 elif page == "ℹ️ About":
     st.title("ℹ️ About This App")
-    st.markdown("""
-    This web application predicts student academic performance using machine learning.
     
-    **Features:**
-    - Student performance prediction  
-    - Dashboard visualization with dynamic KPIs  
-    - Feature importance insight  
-    - SHAP model explainability  
-    - predicted results display
-    - customized prompts for academic staff
-    - OpenAI-powered chatbot assistant  
-
-    Built by Njinju Zilefac Fogap using **Streamlit**, **Python**, and **Machine Learning**.
+    st.markdown("""
+    ## 📘 Student Academic Performance Predictor
+    
+    This web application predicts student academic performance using machine learning. It helps educators, administrators, and students understand academic performance patterns and identify at-risk students early.
+    
+    ---
+    
+    ## ✨ Features
+    
+    - **🎯 Student Performance Prediction** – Predicts if a student will dropout, remain enrolled, or graduate
+    - **📊 Dashboard Visualization** – Dynamic KPIs showing student metrics and progress
+    - **🔥 Feature Importance** – Understand which factors influence predictions most
+    - **🔍 SHAP Explainability** – Detailed model interpretability with SHAP force plots
+    - **📈 Prediction Results** – Clear visualization of prediction outcomes with confidence scores
+    - **📚 Admin/Lecturer Prompts** – Pre-built prompts for institutional staff to generate insights
+    - **💬 OpenAI-Powered Chatbot** – Interactive academic assistant for real-time guidance
+    - **⭐ User Reviews** – Community feedback and ratings
+    
+    ---
+    
+    ## 🚀 How to Use This Application
+    
+    ### Step 1: 🏠 Home (Prediction)
+    1. Navigate to the **Home** page from the sidebar
+    2. Enter student demographic information:
+       - Age at enrollment
+       - Parent occupation codes
+       - Admission grade
+       - Tuition payment status
+       - Course ID
+    3. Fill in academic performance data:
+       - 1st semester units enrolled, evaluated, approved, and grades
+       - 2nd semester units enrolled, evaluated, approved, and grades
+    4. Click **"🔍 Predict Performance"** button
+    5. View the prediction result and confidence score
+    
+    ### Step 2: 📊 Prediction Results
+    - Review your prediction in a dedicated results page
+    - See the predicted category (Dropout, Enrolled, or Graduate)
+    - Check the confidence score (0-1 scale)
+    
+    ### Step 3: 📈 Dashboard
+    - View comprehensive KPIs for the student
+    - See semester grades, curricular progress, and tuition status
+    - Visualize academic metrics in interactive charts
+    
+    ### Step 4: 🔥 Feature Importance
+    - Understand which features impact the prediction most
+    - View a ranked bar chart of feature contributions
+    - Access detailed importance scores in table format
+    
+    ### Step 5: 🔍 SHAP Explainability
+    - Get detailed model interpretation with SHAP values
+    - View force plots showing individual feature contributions
+    - Understand why the model made a specific prediction
+    
+    ### Step 6: 📚 Admin / Lecturer Prompts
+    - Access pre-built prompts for institutional users
+    - Send prompts to the AI assistant for professional insights
+    - Generate reports on academic risk, interventions, and recommendations
+    
+    ### Step 7: ⭐ Reviews & Feedback
+    - Share your experience with the application
+    - Rate the app on a 1-5 scale
+    - Read feedback from other users
+    
+    ### Step 8: 💬 Academic Assistant
+    - Use the chatbot in the sidebar for real-time questions
+    - Ask questions about predictions, SHAP values, or academic strategies
+    - Get personalized responses based on student data
+    
+    ---
+    
+    ## 📋 Input Guide
+    
+    - **Course ID**: Department/program codes (e.g., 33=Agronomy, 171=Design, 8014=Nursing)
+    - **Tuition Fees**: 1 = Up to date, 0 = Behind on payments
+    - **Semester Grades**: Scale of 0-20
+    - **Units Enrolled/Approved**: Number of courses
+    - **Evaluations**: Number of exams taken
+    
+    ---
+    
+    ## 🛠️ Technology Stack
+    
+    - **Framework**: Streamlit (web app framework)
+    - **Language**: Python 3.13
+    - **ML Libraries**: scikit-learn, XGBoost, LightGBM
+    - **Explainability**: SHAP
+    - **Data Processing**: Pandas, NumPy
+    - **Visualization**: Matplotlib, Seaborn
+    - **AI Assistant**: OpenAI GPT-4
+    
+    ---
+    
+    ## 👨‍💼 Author
+    
+    Built by **Njinju Zilefac Fogap** as part of a Master's thesis project on predicting student academic performance using machine learning.
+    
+    ---
+    
+    ## 📞 Support
+    
+    For issues or questions, please use the Academic Assistant chatbot or consult with your institution's technical support team.
     """)
