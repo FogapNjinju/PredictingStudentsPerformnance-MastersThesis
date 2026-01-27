@@ -194,6 +194,19 @@ help_units_enrolled_2 = "Number of curricular units enrolled in during the secon
 help_units_eval_2 = "Number of curricular units enrolled in during the second semester. Indicates continued academic engagement."
 help_units_approved_2 = "Number of curricular units successfully completed in the second semester. Reflects ongoing academic success."
 help_units_grade_2 = "Average grade obtained in the second semester. Reflects academic performance over the latter half of the academic year."
+why_demographic_background = (
+    "This information provides contextual background that may influence academic pathways, "
+    "engagement patterns, and access to support resources. It helps the model interpret "
+    "academic performance within a broader student context."
+)
+
+why_academic_performance = (
+    "These indicators reflect the student’s academic engagement and achievement across semesters. "
+    "They are key predictors of progression, persistence, and completion, and support early "
+    "identification of students who may benefit from academic intervention."
+)
+
+
 
 if page == "🏠 Home (Prediction)":
     st.markdown("""
@@ -206,7 +219,7 @@ if page == "🏠 Home (Prediction)":
 
     st.header("📝 Student Information")
     with st.form("prediction_form"):
-        st.subheader("Demographic & Background Information")
+        st.subheader("Demographic & Background Information", help=why_demographic_background)
         col1, col2, col3 = st.columns(3)
         with col1:
             Age_at_enrollment = st.number_input("Age at Enrollment", 14, 100, 18, help = help_age)
@@ -221,7 +234,7 @@ if page == "🏠 Home (Prediction)":
             Curricular_units_1st_sem_enrolled = st.number_input("1st Sem Units Enrolled", 0, 40, help = help_units_enrolled_1)
             Curricular_units_1st_sem_approved = st.number_input("1st Sem Units Approved", 0, 40 , help = help_units_approved_1)
         st.markdown("---")
-        st.subheader("🎓 Academic Performance Inputs")
+        st.subheader("🎓 Academic Performance Inputs",   help=why_academic_performance)
         col4, col5 = st.columns(2)
         with col4:
             Curricular_units_1st_sem_evaluations = st.number_input("1st Sem Evaluations", 0, 100, help = help_units_eval_1)
