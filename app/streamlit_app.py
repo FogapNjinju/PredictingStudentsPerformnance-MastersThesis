@@ -46,58 +46,136 @@ st.set_page_config(
 # ------------------------------------------------------------
 st.markdown("""
 <style>
-html, body, [class*="css"]  {
-    font-family: 'Inter', sans-serif;
+/* -----------------------------------------
+   ROOT VARIABLES (AUTO DARK/LIGHT MODE)
+------------------------------------------*/
+:root {
+    --bg-main: #ffffff;
+    --bg-sidebar: #f3f3f3;
+    --bg-card: rgba(240,240,240,0.85);
+    --text-main: #111111;
+    --text-muted: #555555;
+    --border-color: #cccccc;
+    --accent: #FFD93D;
+    --button-bg: #111111;
+    --button-text: #ffffff;
 }
 
-/* NEOBRUTALISM UI THEME */
+/* Dark mode overrides */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-main: #0e1117;
+        --bg-sidebar: #161b22;
+        --bg-card: rgba(30,30,30,0.85);
+        --text-main: #f0f0f0;
+        --text-muted: #b0b0b0;
+        --border-color: #2f2f2f;
+        --accent: #FFD93D;
+        --button-bg: #FFD93D;
+        --button-text: #111111;
+    }
+}
+
+/* -----------------------------------------
+   GLOBAL
+------------------------------------------*/
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-main);
+}
+
+/* -----------------------------------------
+   SIDEBAR
+------------------------------------------*/
 section[data-testid="stSidebar"] {
-    background-color: #D3D3D3 !important;
+    background-color: var(--bg-sidebar) !important;
     padding: 20px;
 }
 
+/* -----------------------------------------
+   HEADINGS
+------------------------------------------*/
 h1, h2, h3 {
-    color: #202020 !important;
+    color: var(--text-main) !important;
     font-weight: 800 !important;
 }
 
+/* -----------------------------------------
+   MAIN CONTAINER
+------------------------------------------*/
 .block-container {
     padding-top: 2rem;
 }
 
-.stButton>button {
-    background: #111 !important;
-    color: white !important;
+/* -----------------------------------------
+   BUTTONS
+------------------------------------------*/
+.stButton > button {
+    background: var(--button-bg) !important;
+    color: var(--button-text) !important;
     border-radius: 12px !important;
-    border: 3px solid #202020 !important;
+    border: 3px solid var(--border-color) !important;
     padding: 10px 20px;
     font-weight: 700;
 }
 
-.stButton>button:hover {
-    background: #FFD93D !important;
+.stButton > button:hover {
+    background: var(--accent) !important;
     color: #111 !important;
     transition: 0.3s;
 }
 
+/* -----------------------------------------
+   RADIO BUTTONS
+------------------------------------------*/
 div[role='radiogroup'] > label {
-    background: rgba(255,255,255,0.4);
+    background: var(--bg-card);
     padding: 10px 15px;
     border-radius: 10px;
     margin-bottom: 8px;
-    font-size: 17px;
+    font-size: 16px;
     font-weight: 600;
-
-    /* Force same width */
     display: inline-block;
-    width: 250px;  /* adjust width as needed */
+    width: 250px;
     text-align: left;
+    color: var(--text-main);
+    border: 1px solid var(--border-color);
 }
 
 div[role='radiogroup'] > label:hover {
-    background: rgba(0,0,0,0.15);
+    background: rgba(255,255,255,0.15);
+}
+
+/* -----------------------------------------
+   CARDS / PANELS
+------------------------------------------*/
+.custom-card {
+    background: var(--bg-card);
+    padding: 20px;
+    border-radius: 15px;
+    border: 1px solid var(--border-color);
+    color: var(--text-main);
+}
+
+/* -----------------------------------------
+   METRICS
+------------------------------------------*/
+[data-testid="stMetricValue"] {
+    color: var(--text-main);
+}
+[data-testid="stMetricLabel"] {
+    color: var(--text-muted);
+}
+
+/* -----------------------------------------
+   DATAFRAMES
+------------------------------------------*/
+.stDataFrame {
+    background-color: var(--bg-main);
+}
 </style>
 """, unsafe_allow_html=True)
+
 
 # ------------------------------------------------------------
 # Sidebar Navigation
