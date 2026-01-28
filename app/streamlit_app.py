@@ -248,12 +248,41 @@ prediction = None
 probability = None
 input_data = None
 
+
+# ==============================
+# MAPPINGS
+# ==============================
+COURSE_MAP = {
+    "Agronomy": 33,
+    "Design": 171,
+    "Nursing": 8014,
+    "Social Service": 9070,
+    "Management": 9991,
+    "Technologies": 9119
+}
+
+PARENT_OCCUPATION_MAP = {
+    "Unknown": 34,
+    "Can't read or write": 35,
+    "Basic education (1st cycle)": 37,
+    "Basic education (2nd cycle)": 38,
+    "Secondary education (12th year)": 1,
+    "Higher education – Bachelor’s": 2,
+    "Higher education – Degree": 3,
+    "Higher education – Master’s": 4,
+    "Higher education – Doctorate": 5,
+    "Technical-professional course": 22,
+    "Technological specialization course": 39
+}
+
+TUITION_MAP = {
+    "Yes (Up to date)": 1,
+    "No (Pending payments)": 0
+}
+
 # ------------------------------------------------------------
 # ---------------------- HOME PAGE ---------------------------
 # ------------------------------------------------------------
-
-
-
 
 help_course = " Numerical identifier representing the students degree programme.Different programmes have distinct academic structures, assessment difficulty, and dropout risks, making this a strong contextual predictor. Degree program code: 33=Agronomy, 171=Design, 8014=Nursing, 9070=Social Service, 9991=Management, 9119=Technologies"
 help_prevqual = "Grade obtained in the student's highest previous qualification (e.g. secondary education or equivalent). This reflects prior academic preparedness and baseline learning capacity."
@@ -286,42 +315,56 @@ why_academic_performance = (
 
 
 
+# ==============================
+# HOME PAGE
+# ==============================
 if page == "🏠 Home (Prediction)":
-    st.markdown("""
-    <h1 style='text-align:center; color:#2C3E50;'>📘 Student Academic Performance Predictor</h1>
-    <p style='text-align:center; font-size:18px;'>
-        Predict the academic performance category of a student based on academic & demographic factors.
-    </p>
-    <hr style="border:1px solid #bbb;">
-    """, unsafe_allow_html=True)
+    st.title("📘 Student Academic Performance Predictor")
 
-    st.header("📝 Student Information")
     with st.form("prediction_form"):
-        st.subheader("Demographic & Background Information", help=why_demographic_background)
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            Age_at_enrollment = st.number_input("Age at Enrollment", 14, 100, 18, help = help_age)
-            Mothers_occupation = st.number_input("Mother's Occupation", 0, 100, help = MOTHERS_OCCUPATION)
-            Fathers_occupation = st.number_input("Father's Occupation", 0, 100, help = FATHERS_OCCUPATION)
-        with col2:
-            Admission_grade = st.number_input("Admission Grade", 0.0, 200.0, help = help_admission_grade)
-            Tuition_fees_up_to_date = st.selectbox("Tuition Fees Up-to-Date?", [0, 1] , help = help_tuition)
-            Previous_qualification_grade = st.number_input("Previous Qualification Grade", 0.0, 300.0, help = help_prevqual)
-        with col3:
-            Course = st.number_input("Course ID", 171, 9999, help = help_course)
-            Curricular_units_1st_sem_enrolled = st.number_input("1st Sem Units Enrolled", 0, 40, help = help_units_enrolled_1)
-            Curricular_units_1st_sem_approved = st.number_input("1st Sem Units Approved", 0, 40 , help = help_units_approved_1)
-        st.markdown("---")
-        st.subheader("🎓 Academic Performance Inputs",   help=why_academic_performance)
-        col4, col5 = st.columns(2)
-        with col4:
-            Curricular_units_1st_sem_evaluations = st.number_input("1st Sem Evaluations", 0, 100, help = help_units_eval_1)
-            Curricular_units_1st_sem_grade = st.number_input("1st Sem Grade", 0.0, 20.0, help = help_units_grade_1)
-            Curricular_units_2nd_sem_enrolled = st.number_input("2nd Sem Units Enrolled", 0, 40, help = help_units_enrolled_2)
-        with col5:
-            Curricular_units_2nd_sem_approved = st.number_input("2nd Sem Units Approved", 0, 40, help = help_units_approved_2)
-            Curricular_units_2nd_sem_evaluations = st.number_input("2nd Sem Evaluations", 0, 100, help = help_units_eval_2)
-            Curricular_units_2st_sem_grade = st.number_input("2nd Sem Grade", 0.0, 20.0, help = help_units_grade_2)
+        st.subheader("👤 Demographic & Background Information")
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            Age_at_enrollment = st.number_input("Age at Enrollment", 14, 100, 18)
+
+            mother_label = st.selectbox(
+                "Mother's Education / Occupation",
+                list(PARENT_OCCUPATION_MAP.keys())
+            )
+            Mothers_occupation = PARENT_OCCUPATION_MAP[mother_label]
+
+            father_label = st.selectbox(
+                "Father's Education / Occupation",
+                list(PARENT_OCCUPATION_MAP.keys())
+            )
+            Fathers_occupation = PARENT_OCCUPATION_MAP[father_label]
+
+        with c2:
+            Admission_grade = st.number_input("Admission Grade", 0.0, 200.0)
+            tuition_label = st.selectbox("Tuition Fees Up-to-Date?", list(TUITION_MAP.keys()))
+            Tuition_fees_up_to_date = TUITION_MAP[tuition_label]
+            Previous_qualification_grade = st.number_input("Previous Qualification Grade", 0.0, 300.0)
+
+        with c3:
+            course_label = st.selectbox("Degree Programme", list(COURSE_MAP.keys()))
+            Course = COURSE_MAP[course_label]
+            Curricular_units_1st_sem_enrolled = st.number_input("1st Sem Units Enrolled", 0, 40)
+            Curricular_units_1st_sem_approved = st.number_input("1st Sem Units Approved", 0, 40)
+
+        st.subheader("🎓 Academic Performance")
+        c4, c5 = st.columns(2)
+
+        with c4:
+            Curricular_units_1st_sem_evaluations = st.number_input("1st Sem Evaluations", 0, 100)
+            Curricular_units_1st_sem_grade = st.number_input("1st Sem Grade", 0.0, 20.0)
+            Curricular_units_2nd_sem_enrolled = st.number_input("2nd Sem Units Enrolled", 0, 40)
+
+        with c5:
+            Curricular_units_2nd_sem_approved = st.number_input("2nd Sem Units Approved", 0, 40)
+            Curricular_units_2nd_sem_evaluations = st.number_input("2nd Sem Evaluations", 0, 100)
+            Curricular_units_2st_sem_grade = st.number_input("2nd Sem Grade", 0.0, 20.0)
+
         submitted = st.form_submit_button("🔍 Predict Performance", use_container_width=True)
 
     if submitted:
@@ -342,21 +385,21 @@ if page == "🏠 Home (Prediction)":
             "Fathers_occupation": Fathers_occupation,
             "Mothers_occupation": Mothers_occupation
         }])
+
         prediction = model.predict(input_data)[0]
         probability = model.predict_proba(input_data).max()
-        label_map = {0: "Dropout 🚫🎓", 1: "Enrolled 📚🎓", 2: "Graduate 🎓✨"}
-        prediction_label = label_map.get(prediction, "Unknown")
-        st.markdown("---")
-        st.header("📊 Prediction Results")
-        colA, colB = st.columns(2)
-        with colA:
-            st.metric("Predicted Category", prediction_label)
-        with colB:
-            st.metric("Confidence Score", f"{probability:.2f}")
-        st.success(f"🎯 The student is predicted to **{prediction_label}** with a confidence of **{probability:.2f}**.")
-        st.session_state["input_data"] = input_data
-        st.session_state["prediction"] = prediction
-        st.session_state["probability"] = probability
+
+        label_map = {0: "Dropout 🚫", 1: "Enrolled 📚", 2: "Graduate 🎓"}
+        st.session_state.update({
+            "input_data": input_data,
+            "prediction": prediction,
+            "probability": probability
+        })
+
+        st.success(
+            f"🎯 Predicted outcome: **{label_map[prediction]}** "
+            f"(Confidence: **{probability:.2f}**)"
+        )
 # ------------------------------------------------------------
 # ------------------ 📊 PREDICTION RESULTS TAB ---------------
 # ------------------------------------------------------------
