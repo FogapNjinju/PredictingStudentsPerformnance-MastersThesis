@@ -285,7 +285,7 @@ TUITION_MAP = {
 # ------------------------------------------------------------
 
 help_course = " Numerical identifier representing the students degree programme.Different programmes have distinct academic structures, assessment difficulty, and dropout risks, making this a strong contextual predictor. Degree program code: 33=Agronomy, 171=Design, 8014=Nursing, 9070=Social Service, 9991=Management, 9119=Technologies"
-help_prevqual = "Grade obtained in the student's highest previous qualification (e.g. secondary education or equivalent). This reflects prior academic preparedness and baseline learning capacity."
+help_prevqual = "Grade obtained in the student's highest previous qualification (e.g. secondary education or equivalent). This reflects prior academic preparedness and baseline learning capacity. (between 0 and 200)"
 help_parents_qual = "Parent education level (encoded)."
 help_parents_occ = "Parent job (encoded)."
 MOTHERS_OCCUPATION = "1 - Secondary Education - 12th Year of Schooling or Eq. 2 - Higher Education - Bachelor's Degree 3 - Higher Education - Degree 4 - Higher Education - Master's 5 - Higher Education - Doctorate 6 - Frequency of Higher Education 9 - 12th Year of Schooling - Not Completed 10 - 11th Year of Schooling - Not Completed 11 - 7th Year (Old) 12 - Other - 11th Year of Schooling 14 - 10th Year of Schooling 18 - General commerce course 19 - Basic Education 3rd Cycle (9th/10th/11th Year) or Equiv. 22 - Technical-professional course 26 - 7th year of schooling 27 - 2nd cycle of the general high school course 29 - 9th Year of Schooling - Not Completed 30 - 8th year of schooling 34 - Unknown 35 - Can't read or write 36 - Can read without having a 4th year of schooling 37 - Basic education 1st cycle (4th/5th year) or equiv. 38 - Basic Education 2nd Cycle (6th/7th/8th Year) or Equiv. 39 - Technological specialization course 40 - Higher education - degree (1st cycle) 41 - Specialized higher studies course 42 - Professional higher technical course 43 - Higher Education - Master (2nd cycle) 44 - Higher Education - Doctorate (3rd cycle)"
@@ -296,11 +296,11 @@ help_age = "Student age at the time of enrolment. Younger or older students may 
 help_units_enrolled_1 = "Number of curricular units the student enrolled in during the first semester, This reflects initial academic workload and commitment."
 help_units_eval_1 = "Number of assessments or evaluations taken in the first semester. This indicates engagement and progress in coursework."
 help_units_approved_1 = "Number of curricular units successfully passed in the first semester. This shows academic success and mastery of material."
-help_units_grade_1 = "Average grade obtained across approved curricular units in the first semester. This reflects overall academic performance."
+help_units_grade_1 = "Average grade obtained across approved curricular units in the first semester. This reflects overall academic performance (between 0 and 20)"
 help_units_enrolled_2 = "Number of curricular units enrolled in during the second semester. Indicates continued academic engagement."
 help_units_eval_2 = "Number of curricular units enrolled in during the second semester. Indicates continued academic engagement."
 help_units_approved_2 = "Number of curricular units successfully completed in the second semester. Reflects ongoing academic success."
-help_units_grade_2 = "Average grade obtained in the second semester. Reflects academic performance over the latter half of the academic year."
+help_units_grade_2 = "Average grade obtained in the second semester. Reflects academic performance over the latter half of the academic year (between 0 and 20)."
 why_demographic_background = (
     "This information provides contextual background that may influence academic pathways, "
     "engagement patterns, and access to support resources. It helps the model interpret "
