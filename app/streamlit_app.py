@@ -703,107 +703,194 @@ elif page == "ℹ️ About":
     st.title("ℹ️ About This App")
     
     st.markdown("""
-    ## 📘 Student Academic Performance Predictor
-    
-    This web application predicts student academic performance using machine learning. It helps educators, administrators, and students understand academic performance patterns and identify at-risk students early.
-    
-    ---
-    
-    ## ✨ Features
-    
-    - **🎯 Student Performance Prediction** – Predicts if a student will dropout, remain enrolled, or graduate
-    - **📊 Dashboard Visualization** – Dynamic KPIs showing student metrics and progress
-    - **🔥 Feature Importance** – Understand which factors influence predictions most
-    - **🔍 SHAP Explainability** – Detailed model interpretability with SHAP force plots
-    - **📈 Prediction Results** – Clear visualization of prediction outcomes with confidence scores
-    - **📚 Admin/Lecturer Prompts** – Pre-built prompts for institutional staff to generate insights
-    - **💬 OpenAI-Powered Chatbot** – Interactive academic assistant for real-time guidance
-    - **⭐ User Reviews** – Community feedback and ratings
-    
-    ---
-    
-    ## 🚀 How to Use This Application
-    
-    ### Step 1: 🏠 Home (Prediction)
-    1. Navigate to the **Home** page from the sidebar
-    2. Enter student demographic information:
-       - Age at enrollment
-       - Parent occupation codes
-       - Admission grade
-       - Tuition payment status
-       - Course ID
-    3. Fill in academic performance data:
-       - 1st semester units enrolled, evaluated, approved, and grades
-       - 2nd semester units enrolled, evaluated, approved, and grades
-    4. Click **"🔍 Predict Performance"** button
-    5. View the prediction result and confidence score
-    
-    ### Step 2: 📊 Prediction Results
-    - Review your prediction in a dedicated results page
-    - See the predicted category (Dropout, Enrolled, or Graduate)
-    - Check the confidence score (0-1 scale)
-    
-    ### Step 3: 📈 Dashboard
-    - View comprehensive KPIs for the student
-    - See semester grades, curricular progress, and tuition status
-    - Visualize academic metrics in interactive charts
-    
-    ### Step 4: 🔥 Feature Importance
-    - Understand which features impact the prediction most
-    - View a ranked bar chart of feature contributions
-    - Access detailed importance scores in table format
-    
-    ### Step 5: 🔍 SHAP Explainability
-    - Get detailed model interpretation with SHAP values
-    - View force plots showing individual feature contributions
-    - Understand why the model made a specific prediction
-    
-    ### Step 6: 📚 Admin / Lecturer Prompts
-    - Access pre-built prompts for institutional users
-    - Send prompts to the AI assistant for professional insights
-    - Generate reports on academic risk, interventions, and recommendations
-    
-    ### Step 7: ⭐ Reviews & Feedback
-    - Share your experience with the application
-    - Rate the app on a 1-5 scale
-    - Read feedback from other users
-    
-    ### Step 8: 💬 Academic Assistant
-    - Use the chatbot in the sidebar for real-time questions
-    - Ask questions about predictions, SHAP values, or academic strategies
-    - Get personalized responses based on student data
-    
-    ---
-    
-    ## 📋 Input Guide
-    
-    - **Course ID**: Department/program codes (e.g., 33=Agronomy, 171=Design, 8014=Nursing)
-    - **Tuition Fees**: 1 = Up to date, 0 = Behind on payments
-    - **Semester Grades**: Scale of 0-20
-    - **Units Enrolled/Approved**: Number of courses
-    - **Evaluations**: Number of exams taken
-    
-    ---
-    
-    ## 🛠️ Technology Stack
-    
-    - **Framework**: Streamlit (web app framework)
-    - **Language**: Python 3.13
-    - **ML Libraries**: scikit-learn, XGBoost, LightGBM
-    - **Explainability**: SHAP
-    - **Data Processing**: Pandas, NumPy
-    - **Visualization**: Matplotlib, Seaborn
-    - **AI Assistant**: OpenAI GPT-4
-    
-    ---
-    
-    ## 👨‍💼 Author
-    
-    Built by **Njinju Zilefac Fogap** as part of a Master's thesis project on predicting student academic performance using machine learning.
-    
-    ---
-    
-    ## 📞 Support
-    
-    For issues or questions, please use the Academic Assistant chatbot or consult with your institution's technical support team.
+   ##ℹ️ About This App
+###📘 Student Academic Performance Predictor
+
+This web application predicts student academic performance using machine learning techniques. It is designed to support educators, academic advisors, and institutional administrators in identifying students who may be at risk of academic difficulty and in enabling early, evidence-based interventions.
+
+The system combines predictive modeling with explainability tools to ensure that predictions are transparent, interpretable, and ethically deployed.
+
+###✨ Key Features
+
+🎯 Student Performance Prediction
+Predicts whether a student is likely to Dropout, Remain Enrolled, or Graduate based on academic and demographic indicators.
+
+📊 Prediction Results with Confidence Scores
+Displays the predicted category alongside a model-derived probability score.
+
+📈 Interactive Student Dashboard
+Visual KPIs summarizing grades, curricular progress, and tuition status.
+
+🔥 Feature Importance Analysis
+Highlights the most influential variables driving model predictions.
+
+🔍 SHAP Explainability
+Provides instance-level explanations showing how each feature contributed to a specific prediction.
+
+📚 Admin / Lecturer Prompt Library
+Predefined professional prompts to support advising, intervention planning, and academic reporting.
+
+💬 AI-Powered Academic Assistant
+An interactive chatbot that explains predictions, interprets SHAP outputs, and suggests academic support strategies.
+
+⭐ Reviews & Feedback System
+Allows users to provide structured feedback on usability and perceived value.
+
+###🚀 How to Use the Application
+Step 1: 🏠 Home (Prediction)
+
+Navigate to Home (Prediction) from the sidebar
+
+Enter student demographic and background information:
+
+Age at enrollment
+
+Parental education/occupation (encoded)
+
+Admission grade
+
+Tuition fee status
+
+Course/programme code
+
+Provide academic performance data:
+
+Units enrolled, evaluated, and approved (1st & 2nd semester)
+
+Semester grades
+
+Click “🔍 Predict Performance”
+
+View the predicted outcome and confidence score
+
+Step 2: 📊 Prediction Results
+
+Review the predicted academic status
+
+Interpret the confidence score associated with the prediction
+
+Understand the probabilistic nature of the result
+
+Step 3: 📈 Dashboard
+
+View key academic KPIs
+
+Compare semester-level performance
+
+Monitor engagement and tuition compliance
+
+Step 4: 🔥 Feature Importance
+
+Examine which features most influenced the prediction
+
+Use ranked importance scores to identify dominant academic risk or success factors
+
+Step 5: 🔍 SHAP Explainability
+
+Explore detailed, instance-level explanations
+
+Understand how individual features pushed the prediction toward a given outcome
+
+Support transparent, explainable decision-making
+
+Step 6: 📚 Admin / Lecturer Prompts
+
+Use curated prompts for:
+
+Academic risk assessment
+
+Intervention planning
+
+Advisor–student meeting preparation
+
+Institutional reporting
+
+Step 7: ⭐ Reviews & Feedback
+
+Submit feedback on system usability and relevance
+
+View feedback from other users across different roles
+
+Step 8: 💬 Academic Assistant
+
+Ask questions about predictions, KPIs, or SHAP explanations
+
+Receive contextual, student-specific guidance
+
+Support human decision-making with AI-assisted insights
+
+###⚖️ Model Limitations & Ethical Use
+
+This application is designed as a decision-support system, not as an automated decision-maker.
+
+###🔍 Model Limitations
+
+Predictions are probabilistic
+Outputs represent estimated probabilities derived from historical data patterns, not guaranteed outcomes.
+
+Not a deterministic decision tool
+The model’s predictions may be affected by data quality, bias, and unobserved contextual factors.
+
+Should not replace human judgement
+Academic decisions such as progression, intervention, or dismissal must always involve educators, advisors, or institutional review processes.
+
+Predictions should be interpreted as early-warning indicators to guide proactive academic support—not as final or binding academic decisions.
+
+###🔐 Data Privacy & Governance
+
+This system follows privacy-by-design and responsible AI deployment principles.
+
+No personal data is stored permanently
+Student inputs used for prediction exist only during the active user session.
+
+Prediction data is session-based
+All student-related data is cleared when the session ends or the application is refreshed.
+
+Reviews are stored locally only
+User feedback is saved in a local CSV file and does not include sensitive academic or personal identifiers.
+
+No automated data sharing
+Student data is not shared with third parties beyond temporary, anonymized processing for explainability and guidance.
+
+These safeguards align with ethical AI standards, institutional data protection expectations, and academic research best practices.
+
+###📋 Input Guide
+
+Course ID: Encoded academic programme identifiers (e.g., 33 = Agronomy, 171 = Design, 8014 = Nursing)
+
+Tuition Fees:
+
+1 = Up to date
+
+0 = Pending payments
+
+Semester Grades: Scale of 0–20
+
+Units Enrolled / Approved: Number of curricular units
+
+Evaluations: Number of assessments taken
+
+###🛠️ Technology Stack
+
+Framework: Streamlit
+
+Programming Language: Python
+
+Machine Learning: scikit-learn (ensemble and tree-based models)
+
+Explainability: SHAP
+
+Data Processing: Pandas, NumPy
+
+Visualisation: Matplotlib
+
+AI Assistant: OpenAI GPT models
+
+###👨‍💼 Author
+
+Developed by Njinju Zilefac Fogap as part of a Master’s thesis on predicting student academic performance using machine learning, with a strong emphasis on explainability, ethical AI, and decision-support system design.
+
+###📞 Support
+
+For questions or issues, please use the Academic Assistant chatbot or consult your institution’s academic or technical support services.
     """)
