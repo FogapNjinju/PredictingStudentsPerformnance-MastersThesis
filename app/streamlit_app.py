@@ -11,26 +11,19 @@ from datetime import datetime
 # ------------------------------------------------------------
 # Helper Functions for Reviews
 # ------------------------------------------------------------
-REVIEWS_FILE = "reviews.json"
-
+REVIEWS_FILE = "reviews.csv"
 def load_reviews():
-    """Load reviews from JSON file"""
+    """Load reviews from CSV file"""
     if Path(REVIEWS_FILE).exists():
-        with open(REVIEWS_FILE, 'r') as f:
-            reviews = json.load(f)
-        return pd.DataFrame(reviews)
-    return pd.DataFrame()
+        return pd.read_csv(REVIEWS_FILE)
+    return pd.DataFrame(columns=["name", "role", "rating", "review", "timestamp"])
 
 def save_review(review_data):
-    """Save review to JSON file"""
-    reviews = load_reviews()
-    if reviews.empty:
-        reviews_list = [review_data]
-    else:
-        reviews_list = reviews.to_dict('records') + [review_data]
-    
-    with open(REVIEWS_FILE, 'w') as f:
-        json.dump(reviews_list, f, indent=2)
+    """Append review to CSV file"""
+    df = load_reviews()
+    df = pd.concat([df, pd.DataFrame([review_data])], ignore_index=True)
+    df.to_csv(REVIEWS_FILE, index=False)
+
 
 # ------------------------------------------------------------
 # Streamlit Page Config
@@ -637,11 +630,12 @@ elif page == "📚 Admin / Lecturer Prompts":
 # ---------------------- Reviews & Feedback---------------------------
 # ------------------------------------------------------------
 
-elif page == "⭐ Reviews & Feedback":
+# ------------------------------------------------------------
+# REVIEWS & FEEDBACK PAGE
+# ------------------------------------------------------------
+if page == "⭐ Reviews & Feedback":
     st.title("⭐ User Reviews & Feedback")
-    st.markdown(
-        "We value your feedback. Please leave a review after using the application."
-    )
+    st.markdown("We value your feedback. Please leave a review after using the application.")
 
     # ---------- Review Form ----------
     with st.form("review_form"):
@@ -680,7 +674,6 @@ elif page == "⭐ Reviews & Feedback":
     if reviews_df.empty:
         st.info("No reviews yet. Be the first to leave feedback!")
     else:
-        # Show newest first
         reviews_df = reviews_df.sort_values("timestamp", ascending=False)
 
         for _, row in reviews_df.iterrows():
@@ -695,7 +688,7 @@ elif page == "⭐ Reviews & Feedback":
                 ">
                     <strong>{row['name']}</strong> · {row['role']}  
                     <br>
-                    ⭐{"⭐" * (row['rating'] - 1)}
+                    ⭐{"⭐" * int(row['rating'])}
                     <p style="margin-top:8px;">{row['review']}</p>
                     <small style="color:#666;">{row['timestamp']}</small>
                 </div>
