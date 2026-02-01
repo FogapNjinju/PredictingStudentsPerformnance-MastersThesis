@@ -322,7 +322,7 @@ if page == "🏠 Home (Prediction)":
         # ===============================
         # STEP 1: DEMOGRAPHICS
         # ===============================
-        with st.expander("🧍 Step 1: Demographics & Background", expanded=True, help=why_demographic_background):
+        with st.expander("🧍 Step 1: Demographics & Background", expanded=True):
             col1, col2, col3 = st.columns(3)
 
             with col1:
@@ -345,7 +345,7 @@ if page == "🏠 Home (Prediction)":
         # ===============================
         # STEP 2: SEMESTER 1
         # ===============================
-        with st.expander("📘 Step 2: Academic Performance – Semester 1", help=why_academic_performance):
+        with st.expander("📘 Step 2: Academic Performance – Semester 1"):
             col4, col5 = st.columns(2)
 
             with col4:
