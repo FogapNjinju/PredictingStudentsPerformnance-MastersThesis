@@ -177,7 +177,7 @@ div[role='radiogroup'] > label:hover {
 st.sidebar.title("📊 Navigation")
 page = st.sidebar.radio(
     "Go to:",
-    ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 Feature Importance", "🔍 SHAP Explainability","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
+    ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 What Influenced This Result?", "🔍 Detailed Explanation (Advanced)","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
 )
 
 # ------------------------------------------------------------
@@ -322,6 +322,53 @@ def get_actionable_recommendations(prediction_label, confidence, input_data):
             "urgency": "LOW",
             "timeline": "Supportive monitoring"
         }
+
+
+# ============================================================
+# Plain Language Explanations & Tooltips
+# ============================================================
+
+TOOLTIP_PREDICTION_CERTAINTY = """
+**Prediction Certainty** (0.0 - 1.0):
+- **0.9+** = The model is very sure about this prediction
+- **0.7-0.89** = The model is reasonably confident
+- **Below 0.7** = The prediction is uncertain; verify with other methods
+"""
+
+TOOLTIP_WHAT_INFLUENCED = """
+**What Influenced This Result?**
+This shows which student factors had the biggest impact on the prediction.
+Factors at the top pushed the prediction most strongly.
+Think of it like a recipe - this shows which ingredients matter most.
+"""
+
+TOOLTIP_DETAILED_EXPLANATION = """
+**Detailed Explanation (Advanced)**
+This shows exactly HOW each factor influenced the prediction.
+- Green factors pushed toward "Graduate"
+- Red factors pushed toward "Dropout"
+- Length of bar = strength of influence
+
+Example: If "2nd semester grade" has a long red bar,
+that low grade is a major reason for the dropout prediction.
+"""
+
+TOOLTIP_PREDICTION_RESULT = """
+**What's this prediction?**
+The model learned patterns from many students to predict three outcomes:
+- 🚫 Dropout: Student likely to leave before graduating
+- 📚 Enrolled: Student likely to continue but timeline uncertain
+- 🎓 Graduate: Student likely to complete degree
+"""
+
+def show_tooltip(title, content, color="info"):
+    """Display a formatted tooltip"""
+    if color == "info":
+        st.info(content)
+    elif color == "warning":
+        st.warning(content)
+    elif color == "success":
+        st.success(content)
 
 # ============================================================
 # Global variables
@@ -495,11 +542,13 @@ if page == "🏠 Home (Prediction)":
         prediction_label = label_map.get(prediction, "Unknown")
         st.markdown("---")
         st.header("📊 Prediction Results")
+        with st.expander("ℹ️ What does this prediction mean?", expanded=False):
+            st.info(TOOLTIP_PREDICTION_RESULT)
         colA, colB = st.columns(2)
         with colA:
             st.metric("Predicted Category", prediction_label)
         with colB:
-            st.metric("Confidence Score", f"{probability:.2f}")
+            st.metric("Prediction Certainty", f"{probability:.2f}")
         
         # ===== CONFIDENCE INTERPRETATION =====
         confidence_info = get_confidence_interpretation(probability)
@@ -653,8 +702,8 @@ elif page == "📈 Dashboard":
 # ------------------------------------------------------------
 # ---------------------- FEATURE IMPORTANCE -------------------
 # ------------------------------------------------------------
-elif page == "🔥 Feature Importance":
-    st.title("🔥 Model Feature Importance")
+elif page == "🔥 What Influenced This Result?":
+    st.title("🔥 What Influenced This Result?")
 
     if "input_data" not in st.session_state:
         st.warning("⚠ Please make a prediction first on the Home page.")
@@ -669,8 +718,10 @@ elif page == "🔥 Feature Importance":
             "Importance": importances
         }).sort_values("Importance", ascending=True)  # ascending for horizontal bars
 
-        st.subheader("📌 Ranked Feature Importance")
-        st.write("The chart below displays the contribution of each feature to the model's decision.")
+        st.subheader("📌 Ranking of Factors")
+        with st.expander("ℹ️ What does this mean?"):
+            st.info(TOOLTIP_WHAT_INFLUENCED)
+        st.write("The chart below displays the contribution of each factor to the model's decision.")
 
         # ----- Nicely formatted horizontal bar chart -----
         fig, ax = plt.subplots(figsize=(8, 6))
@@ -683,18 +734,20 @@ elif page == "🔥 Feature Importance":
         st.pyplot(fig)
 
         # ----- Display table too -----
-        st.subheader("📋 Feature Importance Table (Sorted)")
+        st.subheader("📋 Ranking Table - What Influenced the Prediction")
         st.dataframe(fi_df[::-1].reset_index(drop=True))  # highest first
 
     except Exception as e:
-        st.warning("⚠ Feature importance is not available for this model.")
+        st.warning("⚠ Factor analysis is not available for this model.")
         st.text(str(e))
 
 # ------------------------------------------------------------
 # ---------------------- SHAP EXPLAINABILITY -----------------
 # ------------------------------------------------------------
-elif page == "🔍 SHAP Explainability":
-    st.title("🔍 SHAP Explainability")
+elif page == "🔍 Detailed Explanation (Advanced)":
+    st.title("🔍 Detailed Explanation (Advanced)")
+    with st.expander("ℹ️ How do I read this?", expanded=False):
+        st.info(TOOLTIP_DETAILED_EXPLANATION)
     if "input_data" not in st.session_state:
         st.warning("⚠ Please make a prediction first on the Home page.")
         st.stop()
@@ -864,9 +917,9 @@ elif page == "ℹ️ About":
     
     - **🎯 Student Performance Prediction** – Predicts if a student will dropout, remain enrolled, or graduate
     - **📊 Dashboard Visualization** – Dynamic KPIs showing student metrics and progress
-    - **🔥 Feature Importance** – Understand which factors influence predictions most
-    - **🔍 SHAP Explainability** – Detailed model interpretability with SHAP force plots
-    - **📈 Prediction Results** – Clear visualization of prediction outcomes with confidence scores
+    - **🔥 What Influenced This Result?** – See which factors most influenced this prediction
+    - **🔍 Detailed Explanation (Advanced)** – Deep dive into how each factor pushed the prediction higher or lower
+    - **📈 Prediction Results** – Clear visualization of prediction outcomes with certainty scores
     - **📚 Admin/Lecturer Prompts** – Pre-built prompts for institutional staff to generate insights
     - **💬 OpenAI-Powered Chatbot** – Interactive academic assistant for real-time guidance
     - **⭐ User Reviews** – Community feedback and ratings
@@ -887,27 +940,27 @@ elif page == "ℹ️ About":
        - 1st semester units enrolled, evaluated, approved, and grades
        - 2nd semester units enrolled, evaluated, approved, and grades
     4. Click **"🔍 Predict Performance"** button
-    5. View the prediction result and confidence score
+    5. View the prediction result and certainty score
     
     ### Step 2: 📊 Prediction Results
     - Review your prediction in a dedicated results page
     - See the predicted category (Dropout, Enrolled, or Graduate)
-    - Check the confidence score (0-1 scale)
+    - Check the certainty score (0-1 scale)
     
     ### Step 3: 📈 Dashboard
     - View comprehensive KPIs for the student
     - See semester grades, curricular progress, and tuition status
     - Visualize academic metrics in interactive charts
     
-    ### Step 4: 🔥 Feature Importance
+    ### Step 4: 🔥 What Influenced This Result?
     - Understand which features impact the prediction most
-    - View a ranked bar chart of feature contributions
-    - Access detailed importance scores in table format
+    - View a ranked bar chart showing which factors influenced the decision
+    - Access detailed factor ranking in table format
     
-    ### Step 5: 🔍 SHAP Explainability
-    - Get detailed model interpretation with SHAP values
-    - View force plots showing individual feature contributions
-    - Understand why the model made a specific prediction
+    ### Step 5: 🔍 Detailed Explanation (Advanced)
+    - Get detailed explanation showing how each factor affected the decision
+    - See visual diagrams showing how each factor pushed the prediction
+    - Understand exactly why the model predicted this outcome
     
     ### Step 6: 📚 Admin / Lecturer Prompts
     - Access pre-built prompts for institutional users
