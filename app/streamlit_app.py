@@ -423,7 +423,7 @@ if page == "🏠 Home (Prediction)":
 
             with col1:
                 Age_at_enrollment = st.number_input("Age at Enrollment", 14, 100, 18, help=help_age)
-                mother_label = st.selectbox("Mother's Education Level", PARENT_OCCUPATION_MAP.keys(), help=help_parents_qual)
+                mother_label = st.selectbox("Mother's Education Level", PARENT_OCCUPATION_MAP.keys())
                 Mothers_occupation = PARENT_OCCUPATION_MAP[mother_label]
 
             with col2:
