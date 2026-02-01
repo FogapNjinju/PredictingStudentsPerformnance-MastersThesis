@@ -235,9 +235,97 @@ def load_artifacts():
 
 model, pipeline = load_artifacts()
 
-# ------------------------------------------------------------
+# ============================================================
+# Helper Functions for Actionable Recommendations
+# ============================================================
+
+def get_confidence_interpretation(confidence):
+    """Interpret confidence score and return color + interpretation"""
+    if confidence >= 0.90:
+        return {
+            "level": "🟢 Very High Certainty",
+            "description": "The model is very confident in this prediction.",
+            "color": "green",
+            "interpretation": "Use this prediction with high confidence for decision-making."
+        }
+    elif confidence >= 0.70:
+        return {
+            "level": "🟡 Moderate Confidence",
+            "description": "The model has reasonable confidence in this prediction.",
+            "color": "orange",
+            "interpretation": "This prediction is reliable but should be considered alongside other factors."
+        }
+    else:
+        return {
+            "level": "🔴 Use with Caution",
+            "description": "The model's confidence is below typical thresholds.",
+            "color": "red",
+            "interpretation": "This prediction is uncertain. Verify with additional assessment methods."
+        }
+
+def get_actionable_recommendations(prediction_label, confidence, input_data):
+    """Generate actionable recommendations based on prediction outcome"""
+    
+    if prediction_label.startswith("Dropout"):
+        return {
+            "status": "🚨 INTERVENTION REQUIRED",
+            "status_color": "error",
+            "title": "Student At-Risk of Dropout",
+            "actions": [
+                "📞 **Contact Student Immediately** – Reach out within 48 hours to understand challenges",
+                "📋 **Academic Assessment** – Review performance data; identify struggling subjects",
+                "💰 **Check Financial Status** – Verify tuition payments and financial aid eligibility",
+                "🤝 **Assign Mentor/Advisor** – Pair with academic or peer mentor for support",
+                "📚 **Tutoring Referral** – Recommend subject-specific or general tutoring services",
+                "🎯 **Create Support Plan** – Develop written action plan with clear milestones",
+                "📊 **Monitor Progress** – Schedule regular check-ins (weekly/bi-weekly)",
+                "🏫 **Campus Resources** – Connect with counseling, career services, or disability support"
+            ],
+            "urgency": "HIGH",
+            "timeline": "Immediate action required"
+        }
+    
+    elif prediction_label.startswith("Enrolled"):
+        return {
+            "status": "⚠️ ONGOING MONITORING",
+            "status_color": "warning",
+            "title": "Student On Track – Requires Support",
+            "actions": [
+                "✅ **Positive Reinforcement** – Acknowledge effort and progress made",
+                "🔍 **Identify Risk Factors** – Use SHAP analysis to see what could cause dropout",
+                "🎯 **Set Academic Goals** – Help student establish semester/year targets",
+                "📈 **Monitor Grade Trends** – Track progression to ensure grades don't decline",
+                "🤝 **Peer Support** – Encourage study groups and peer collaboration",
+                "💪 **Build Resilience** – Teach time management, stress management techniques",
+                "🌟 **Challenge & Engage** – Offer opportunities for academic enrichment",
+                "📅 **Scheduled Check-ins** – Monthly progress reviews to stay on track"
+            ],
+            "urgency": "MEDIUM",
+            "timeline": "Regular monitoring recommended"
+        }
+    
+    else:  # Graduate
+        return {
+            "status": "🎓 ON TRACK FOR SUCCESS",
+            "status_color": "success",
+            "title": "Student Likely to Graduate",
+            "actions": [
+                "🌟 **Positive Recognition** – Celebrate strong academic performance",
+                "🎓 **Graduation Planning** – Begin final degree requirements checklist",
+                "💼 **Career Development** – Connect with career services for post-graduation planning",
+                "📚 **Advanced Opportunities** – Suggest honors programs, research, or internships",
+                "🔗 **Alumni Network** – Prepare for transition to alumni community",
+                "💬 **Peer Mentoring** – Encourage student to mentor struggling peers",
+                "🎯 **Post-Graduation Goals** – Discuss grad school or employment plans",
+                "🏆 **Recognition** – Consider for scholarships, awards, or leadership roles"
+            ],
+            "urgency": "LOW",
+            "timeline": "Supportive monitoring"
+        }
+
+# ============================================================
 # Global variables
-# ------------------------------------------------------------
+# ============================================================
 prediction = None
 probability = None
 input_data = None
@@ -412,6 +500,35 @@ if page == "🏠 Home (Prediction)":
             st.metric("Predicted Category", prediction_label)
         with colB:
             st.metric("Confidence Score", f"{probability:.2f}")
+        
+        # ===== CONFIDENCE INTERPRETATION =====
+        confidence_info = get_confidence_interpretation(probability)
+        col_conf1, col_conf2 = st.columns([1, 2])
+        with col_conf1:
+            st.metric("Certainty Level", confidence_info["level"])
+        with col_conf2:
+            st.info(f"**{confidence_info['interpretation']}**")
+        
+        st.markdown("---")
+        
+        # ===== ACTIONABLE RECOMMENDATIONS =====
+        recommendations = get_actionable_recommendations(prediction_label, probability, input_data)
+        
+        if recommendations["status_color"] == "error":
+            st.error(f"### {recommendations['status']}")
+        elif recommendations["status_color"] == "warning":
+            st.warning(f"### {recommendations['status']}")
+        else:
+            st.success(f"### {recommendations['status']}")
+        
+        st.subheader(f"📋 {recommendations['title']}")
+        st.markdown(f"**Urgency Level:** {recommendations['urgency']} | **Timeline:** {recommendations['timeline']}")
+        
+        st.markdown("### ✅ Recommended Actions:")
+        for i, action in enumerate(recommendations["actions"], 1):
+            st.markdown(f"{i}. {action}")
+        
+        st.markdown("---")
         st.success(f"🎯 The student is predicted to **{prediction_label}** with a confidence of **{probability:.2f}**.")
         st.session_state["input_data"] = input_data
         st.session_state["prediction"] = prediction
