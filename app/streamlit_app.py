@@ -674,6 +674,49 @@ elif page == "📈 Dashboard":
     col_kpi3.metric("Tuition Fees Up-to-Date", "✔ Yes" if fees_status==1 else "❌ No")
     col_kpi4.metric("Predicted Category", prediction_label)
 
+    # ---------------------- Benchmarks & Insight Logic ------------------
+    RECOMMENDED_AVG_GRADE = 10.0  # benchmark: passing/healthy average out of 20
+    # Expect about 75% of enrolled units to be approved as a simple benchmark
+    expected_approved_total = int(total_units * 0.75) if total_units > 0 else 0
+    units_1_approved = input_data["Curricular_units_1st_sem_approved"][0]
+    units_2_approved = input_data["Curricular_units_2nd_sem_approved"][0]
+    approved_total = units_1_approved + units_2_approved
+
+    below_recommended_avg = avg_grade < RECOMMENDED_AVG_GRADE
+    healthy_academic_load = approved_total >= expected_approved_total and total_units > 0
+
+    # Determine overall academic status
+    if prediction_label.startswith("Dropout") or (below_recommended_avg and not healthy_academic_load) or fees_status == 0:
+        overall_status = "High Risk"
+        status_color = "#E74C3C"
+    elif below_recommended_avg or not healthy_academic_load:
+        overall_status = "Moderate Risk"
+        status_color = "#F39C12"
+    else:
+        overall_status = "Low Risk"
+        status_color = "#27AE60"
+
+    # Key concern detection
+    key_concerns = []
+    if input_data["Curricular_units_2st_sem_grade"][0] < RECOMMENDED_AVG_GRADE:
+        key_concerns.append("Low 2nd semester grade")
+    if approved_total < expected_approved_total:
+        key_concerns.append("Lower-than-expected approved units")
+    if fees_status == 0:
+        key_concerns.append("Tuition payments pending")
+
+    key_concern_text = ", ".join(key_concerns) if key_concerns else "None"
+    # Recommended focus (simple, actionable suggestions)
+    recommended_actions = []
+    if "Low 2nd semester grade" in key_concerns:
+        recommended_actions.append("Academic tutoring")
+    if "Tuition payments pending" in key_concerns:
+        recommended_actions.append("Fee follow-up / financial aid check")
+    if "Lower-than-expected approved units" in key_concerns:
+        recommended_actions.append("Study plan & workload review")
+    if not recommended_actions:
+        recommended_actions.append("Continue regular monitoring and support")
+
     # ---------------------- Charts ----------------------------
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -682,6 +725,11 @@ elif page == "📈 Dashboard":
             "Semester": ["1st", "2nd"],
             "Grade": [input_data["Curricular_units_1st_sem_grade"][0], input_data["Curricular_units_2st_sem_grade"][0]]
         }).set_index("Semester"))
+        # contextual annotation for grades
+        if input_data["Curricular_units_2st_sem_grade"][0] < RECOMMENDED_AVG_GRADE:
+            st.markdown("⚠️ **Below recommended average (≥10/20)** — consider targeted tutoring for low second-semester grades.")
+        else:
+            st.markdown("✔️ **Average grade meets or exceeds the recommended benchmark (≥10/20).**")
     with col2:
         st.subheader("Curricular Progress")
         st.bar_chart(pd.DataFrame({
@@ -692,12 +740,30 @@ elif page == "📈 Dashboard":
                 input_data["Curricular_units_1st_sem_approved"][0]
             ]
         }).set_index("Status"))
+        # contextual annotation for academic load
+        if healthy_academic_load:
+            st.markdown("✔️ **Healthy academic load** — approved units meet expectations.")
+        else:
+            st.markdown(f"⚠️ **Below expected approved units** (approved {approved_total} vs expected {expected_approved_total}).")
     with col3:
         st.subheader("Tuition Status")
         if fees_status==1:
             st.success("Fees are up-to-date ✔")
         else:
             st.error("Fees NOT up-to-date ❌")
+
+    # ---------------------- Summary Insight Card --------------------
+    st.markdown("---")
+    st.markdown(
+        f"""
+        <div style="background: rgba(250,250,250,0.9); padding:20px; border-radius:12px; border-left:6px solid {status_color};">
+            <h3 style="margin:0;">**Overall Academic Status:** {overall_status}</h3>
+            <p style="margin:6px 0 0 0;"><strong>Key Concern:</strong> {key_concern_text}</p>
+            <p style="margin:6px 0 0 0;"><strong>Recommended Focus:</strong> {', '.join(recommended_actions)}</p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
 # ------------------------------------------------------------
 # ---------------------- FEATURE IMPORTANCE -------------------
