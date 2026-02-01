@@ -185,15 +185,6 @@ page = st.sidebar.radio(
     ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 What Influenced This Result?", "🔍 Detailed Explanation (Advanced)","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
 )
 
-# Main content: Horizontal tab navigation (mobile-friendly alternative to sidebar)
-st.markdown("### 📑 Quick Navigation (Tabs)")
-pages_list = ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 What Influenced This Result?", "🔍 Detailed Explanation (Advanced)","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
-tab_cols = st.columns(len(pages_list))
-for idx, (col, page_name) in enumerate(zip(tab_cols, pages_list)):
-    with col:
-        if st.button(page_name, key=f"tab_nav_{idx}", use_container_width=True):
-            page = page_name
-st.markdown("---")
 
 # ------------------------------------------------------------
 # Load Model Artifacts
