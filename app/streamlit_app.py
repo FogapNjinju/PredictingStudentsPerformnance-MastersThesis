@@ -176,15 +176,43 @@ div[role='radiogroup'] > label:hover {
 # ------------------------------------------------------------
 st.sidebar.title("📊 Navigation")
 
-# Initialize page in session state if not already
-if "current_page" not in st.session_state:
-    st.session_state["current_page"] = 0
+# List of all pages
+all_pages = ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 What Influenced This Result?", "🔍 Detailed Explanation (Advanced)","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
 
 page = st.sidebar.radio(
     "Go to:",
-    ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 What Influenced This Result?", "🔍 Detailed Explanation (Advanced)","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
+    all_pages
 )
 
+st.sidebar.info("💬 **Academic Assistant:** Available in the Admin/Lecturer Prompts page for contextual AI advice.")
+
+# ============================================================
+# TOP NAVIGATION BAR (Mobile-friendly alternative to sidebar)
+# ============================================================
+st.markdown("**📑 Quick Navigation by Category:**")
+
+# Group pages by category for better UX and cleaner interface
+nav_sections = {
+    "📋 Student Data": ["🏠 Home (Prediction)", "📊 Prediction Results", "📈 Dashboard"],
+    "🔬 Analysis": ["🔥 What Influenced This Result?", "🔍 Detailed Explanation (Advanced)"],
+    "🛠️ Tools": ["📚 Admin / Lecturer Prompts", "⭐ Reviews & Feedback"],
+    "ℹ️ Info": ["ℹ️ About"]
+}
+
+# Create top nav with dropdown selectors per category
+nav_cols = st.columns(len(nav_sections))
+for col, (section_name, section_pages) in zip(nav_cols, nav_sections.items()):
+    with col:
+        selected = st.selectbox(
+            section_name,
+            section_pages,
+            label_visibility="collapsed",
+            key=f"nav_section_{section_name}"
+        )
+        if selected:
+            page = selected
+
+st.markdown("---")
 
 # ------------------------------------------------------------
 # Load Model Artifacts
