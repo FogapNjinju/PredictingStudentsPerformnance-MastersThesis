@@ -8,9 +8,6 @@ from pathlib import Path
 import openai
 import json
 from datetime import datetime
-import numpy as np
-from sklearn.calibration import calibration_curve
-from sklearn.metrics import brier_score_loss
 
 # ------------------------------------------------------------
 # Helper Functions for Reviews
@@ -178,16 +175,50 @@ div[role='radiogroup'] > label:hover {
 # Sidebar Navigation
 # ------------------------------------------------------------
 st.sidebar.title("📊 Navigation")
-
-# Initialize page in session state if not already
-if "current_page" not in st.session_state:
-    st.session_state["current_page"] = 0
-
 page = st.sidebar.radio(
     "Go to:",
-    ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 What Influenced This Result?", "🔍 Detailed Explanation (Advanced)","� Model Calibration","�📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
+    ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 Feature Importance", "🔍 SHAP Explainability","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
 )
 
+# ------------------------------------------------------------
+# Sidebar OpenAI Chatbot
+# ------------------------------------------------------------
+st.sidebar.header("💬 Academic Assistant")
+if "chat_history" not in st.session_state:
+    st.session_state["chat_history"] = []
+
+user_input = st.sidebar.text_input("Ask the assistant:", "")
+if user_input:
+    st.session_state["chat_history"].append(f"Student: {user_input}")
+
+    context = "You are a helpful academic assistant. Explain predictions, SHAP feature importance, and give advice based on student data."
+    if "input_data" in st.session_state:
+        context += f"\nStudent Data:\n{st.session_state['input_data'].to_dict(orient='records')[0]}"
+        if "prediction" in st.session_state and "probability" in st.session_state:
+            context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence: {st.session_state['probability']:.2f}"
+
+    try:
+        openai.api_key = st.secrets["OPENAI_API_KEY"]
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": context},
+                {"role": "user", "content": user_input}
+            ],
+            temperature=1,
+            max_completion_tokens=300
+        )
+        answer = response.choices[0].message.content
+        st.session_state["chat_history"].append(f"Assistant: {answer}")
+    except Exception as e:
+        answer = f"⚠ Error contacting OpenAI API: {e}"
+        st.session_state["chat_history"].append(f"Assistant: {answer}")
+
+for chat in st.session_state["chat_history"]:
+    if chat.startswith("Student:"):
+        st.sidebar.markdown(f"**{chat}**")
+    else:
+        st.sidebar.markdown(chat)
 
 # ------------------------------------------------------------
 # Load Model Artifacts
@@ -204,204 +235,9 @@ def load_artifacts():
 
 model, pipeline = load_artifacts()
 
-# ============================================================
-# Helper Functions for Actionable Recommendations
-# ============================================================
-
-def get_confidence_interpretation(confidence):
-    """Interpret confidence score and return color + interpretation"""
-    if confidence >= 0.90:
-        return {
-            "level": "🟢 Very High Certainty",
-            "description": "The model is very confident in this prediction.",
-            "color": "green",
-            "interpretation": "Use this prediction with high confidence for decision-making."
-        }
-    elif confidence >= 0.70:
-        return {
-            "level": "🟡 Moderate Confidence",
-            "description": "The model has reasonable confidence in this prediction.",
-            "color": "orange",
-            "interpretation": "This prediction is reliable but should be considered alongside other factors."
-        }
-    else:
-        return {
-            "level": "🔴 Use with Caution",
-            "description": "The model's confidence is below typical thresholds.",
-            "color": "red",
-            "interpretation": "This prediction is uncertain. Verify with additional assessment methods."
-        }
-
-def get_actionable_recommendations(prediction_label, confidence, input_data):
-    """Generate actionable recommendations based on prediction outcome"""
-    
-    if prediction_label.startswith("Dropout"):
-        return {
-            "status": "🚨 INTERVENTION REQUIRED",
-            "status_color": "error",
-            "title": "Student At-Risk of Dropout",
-            "actions": [
-                "📞 **Contact Student Immediately** – Reach out within 48 hours to understand challenges",
-                "📋 **Academic Assessment** – Review performance data; identify struggling subjects",
-                "💰 **Check Financial Status** – Verify tuition payments and financial aid eligibility",
-                "🤝 **Assign Mentor/Advisor** – Pair with academic or peer mentor for support",
-                "📚 **Tutoring Referral** – Recommend subject-specific or general tutoring services",
-                "🎯 **Create Support Plan** – Develop written action plan with clear milestones",
-                "📊 **Monitor Progress** – Schedule regular check-ins (weekly/bi-weekly)",
-                "🏫 **Campus Resources** – Connect with counseling, career services, or disability support"
-            ],
-            "urgency": "HIGH",
-            "timeline": "Immediate action required"
-        }
-    
-    elif prediction_label.startswith("Enrolled"):
-        return {
-            "status": "⚠️ ONGOING MONITORING",
-            "status_color": "warning",
-            "title": "Student On Track – Requires Support",
-            "actions": [
-                "✅ **Positive Reinforcement** – Acknowledge effort and progress made",
-                "🔍 **Identify Risk Factors** – Use SHAP analysis to see what could cause dropout",
-                "🎯 **Set Academic Goals** – Help student establish semester/year targets",
-                "📈 **Monitor Grade Trends** – Track progression to ensure grades don't decline",
-                "🤝 **Peer Support** – Encourage study groups and peer collaboration",
-                "💪 **Build Resilience** – Teach time management, stress management techniques",
-                "🌟 **Challenge & Engage** – Offer opportunities for academic enrichment",
-                "📅 **Scheduled Check-ins** – Monthly progress reviews to stay on track"
-            ],
-            "urgency": "MEDIUM",
-            "timeline": "Regular monitoring recommended"
-        }
-    
-    else:  # Graduate
-        return {
-            "status": "🎓 ON TRACK FOR SUCCESS",
-            "status_color": "success",
-            "title": "Student Likely to Graduate",
-            "actions": [
-                "🌟 **Positive Recognition** – Celebrate strong academic performance",
-                "🎓 **Graduation Planning** – Begin final degree requirements checklist",
-                "💼 **Career Development** – Connect with career services for post-graduation planning",
-                "📚 **Advanced Opportunities** – Suggest honors programs, research, or internships",
-                "🔗 **Alumni Network** – Prepare for transition to alumni community",
-                "💬 **Peer Mentoring** – Encourage student to mentor struggling peers",
-                "🎯 **Post-Graduation Goals** – Discuss grad school or employment plans",
-                "🏆 **Recognition** – Consider for scholarships, awards, or leadership roles"
-            ],
-            "urgency": "LOW",
-            "timeline": "Supportive monitoring"
-        }
-
-
-# ============================================================
-# Plain Language Explanations & Tooltips
-# ============================================================
-
-TOOLTIP_PREDICTION_CERTAINTY = """
-**Prediction Certainty** (0.0 - 1.0):
-- **0.9+** = The model is very sure about this prediction
-- **0.7-0.89** = The model is reasonably confident
-- **Below 0.7** = The prediction is uncertain; verify with other methods
-"""
-
-TOOLTIP_WHAT_INFLUENCED = """
-**What Influenced This Result?**
-This shows which student factors had the biggest impact on the prediction.
-Factors at the top pushed the prediction most strongly.
-Think of it like a recipe - this shows which ingredients matter most.
-"""
-
-TOOLTIP_DETAILED_EXPLANATION = """
-**Detailed Explanation (Advanced)**
-This shows exactly HOW each factor influenced the prediction.
-- Green factors pushed toward "Graduate"
-- Red factors pushed toward "Dropout"
-- Length of bar = strength of influence
-
-Example: If "2nd semester grade" has a long red bar,
-that low grade is a major reason for the dropout prediction.
-"""
-
-TOOLTIP_PREDICTION_RESULT = """
-**What's this prediction?**
-The model learned patterns from many students to predict three outcomes:
-- 🚫 Dropout: Student likely to leave before graduating
-- 📚 Enrolled: Student likely to continue but timeline uncertain
-- 🎓 Graduate: Student likely to complete degree
-"""
-
-def show_tooltip(title, content, color="info"):
-    """Display a formatted tooltip"""
-    if color == "info":
-        st.info(content)
-    elif color == "warning":
-        st.warning(content)
-    elif color == "success":
-        st.success(content)
-
-# ============================================================
-# Calibration & Confidence Analysis Functions
-# ============================================================
-
-def calculate_calibration_metrics(y_true, y_pred_proba, n_bins=10):
-    """
-    Calculate calibration metrics: reliability diagram data and Brier score
-    
-    Args:
-        y_true: Ground truth labels
-        y_pred_proba: Predicted probabilities
-        n_bins: Number of bins for reliability diagram
-    
-    Returns:
-        dict with calibration metrics
-    """
-    # Brier score: mean squared error of probabilities
-    brier = brier_score_loss(y_true, y_pred_proba)
-    
-    # Calibration curve data
-    prob_true, prob_pred = calibration_curve(y_true, y_pred_proba, n_bins=n_bins, strategy='uniform')
-    
-    # Overconfidence detection
-    max_prob = np.max(y_pred_proba)
-    mean_prob = np.mean(y_pred_proba)
-    
-    # Calculate Expected Calibration Error (ECE)
-    ece = np.mean(np.abs(prob_true - prob_pred))
-    
-    # Determine if model is overconfident
-    is_overconfident = mean_prob > 0.6 and ece > 0.1
-    
-    return {
-        "brier_score": brier,
-        "prob_true": prob_true,
-        "prob_pred": prob_pred,
-        "max_probability": max_prob,
-        "mean_probability": mean_prob,
-        "ece": ece,
-        "is_overconfident": is_overconfident,
-        "n_bins": n_bins
-    }
-
-def get_calibration_interpretation(metrics):
-    """Interpret calibration metrics and provide insights"""
-    brier = metrics["brier_score"]
-    ece = metrics["ece"]
-    is_overconfident = metrics["is_overconfident"]
-    
-    interpretation = {
-        "brier_status": "✅ Good" if brier < 0.15 else ("⚠️ Fair" if brier < 0.25 else "❌ Poor"),
-        "brier_message": f"Brier Score: {brier:.4f} – Lower is better (0 = perfect, 0.25 = random)",
-        "ece_status": "✅ Well-calibrated" if ece < 0.05 else ("⚠️ Moderately calibrated" if ece < 0.15 else "❌ Poorly calibrated"),
-        "ece_message": f"Expected Calibration Error: {ece:.4f} – Measures gap between predicted and actual probabilities",
-        "overconfidence_warning": is_overconfident,
-        "overconfidence_message": "⚠️ Model shows signs of overconfidence – verify predictions with domain experts" if is_overconfident else "✅ Model confidence appears well-balanced"
-    }
-    
-    return interpretation
-
-# ============================================================
+# ------------------------------------------------------------
 # Global variables
-# ============================================================
+# ------------------------------------------------------------
 prediction = None
 probability = None
 input_data = None
@@ -486,12 +322,12 @@ if page == "🏠 Home (Prediction)":
         # ===============================
         # STEP 1: DEMOGRAPHICS
         # ===============================
-        with st.expander("🧍 Step 1: Demographics & Background", expanded=True):
+        with st.expander("🧍 Step 1: Demographics & Background", expanded=True, help=why_demographic_background):
             col1, col2, col3 = st.columns(3)
 
             with col1:
                 Age_at_enrollment = st.number_input("Age at Enrollment", 14, 100, 18, help=help_age)
-                mother_label = st.selectbox("Mother's Education Level", PARENT_OCCUPATION_MAP.keys())
+                mother_label = st.selectbox("Mother's Education Level", PARENT_OCCUPATION_MAP.keys(), help=help_parents_qual)
                 Mothers_occupation = PARENT_OCCUPATION_MAP[mother_label]
 
             with col2:
@@ -509,7 +345,7 @@ if page == "🏠 Home (Prediction)":
         # ===============================
         # STEP 2: SEMESTER 1
         # ===============================
-        with st.expander("📘 Step 2: Academic Performance – Semester 1"):
+        with st.expander("📘 Step 2: Academic Performance – Semester 1", help=why_academic_performance):
             col4, col5 = st.columns(2)
 
             with col4:
@@ -571,42 +407,11 @@ if page == "🏠 Home (Prediction)":
         prediction_label = label_map.get(prediction, "Unknown")
         st.markdown("---")
         st.header("📊 Prediction Results")
-        with st.expander("ℹ️ What does this prediction mean?", expanded=False):
-            st.info(TOOLTIP_PREDICTION_RESULT)
         colA, colB = st.columns(2)
         with colA:
             st.metric("Predicted Category", prediction_label)
         with colB:
-            st.metric("Prediction Certainty", f"{probability:.2f}")
-        
-        # ===== CONFIDENCE INTERPRETATION =====
-        confidence_info = get_confidence_interpretation(probability)
-        col_conf1, col_conf2 = st.columns([1, 2])
-        with col_conf1:
-            st.metric("Certainty Level", confidence_info["level"])
-        with col_conf2:
-            st.info(f"**{confidence_info['interpretation']}**")
-        
-        st.markdown("---")
-        
-        # ===== ACTIONABLE RECOMMENDATIONS =====
-        recommendations = get_actionable_recommendations(prediction_label, probability, input_data)
-        
-        if recommendations["status_color"] == "error":
-            st.error(f"### {recommendations['status']}")
-        elif recommendations["status_color"] == "warning":
-            st.warning(f"### {recommendations['status']}")
-        else:
-            st.success(f"### {recommendations['status']}")
-        
-        st.subheader(f"📋 {recommendations['title']}")
-        st.markdown(f"**Urgency Level:** {recommendations['urgency']} | **Timeline:** {recommendations['timeline']}")
-        
-        st.markdown("### ✅ Recommended Actions:")
-        for i, action in enumerate(recommendations["actions"], 1):
-            st.markdown(f"{i}. {action}")
-        
-        st.markdown("---")
+            st.metric("Confidence Score", f"{probability:.2f}")
         st.success(f"🎯 The student is predicted to **{prediction_label}** with a confidence of **{probability:.2f}**.")
         st.session_state["input_data"] = input_data
         st.session_state["prediction"] = prediction
@@ -695,62 +500,13 @@ elif page == "📈 Dashboard":
     total_units = input_data["Curricular_units_1st_sem_enrolled"][0] + input_data["Curricular_units_2nd_sem_enrolled"][0]
     avg_grade = (input_data["Curricular_units_1st_sem_grade"][0] + input_data["Curricular_units_2st_sem_grade"][0]) / 2
     fees_status = input_data["Tuition_fees_up_to_date"][0]
-    prediction_raw = st.session_state.get("prediction", "Unknown")
+    prediction_label = st.session_state.get("prediction", "Unknown")
     probability = st.session_state.get("probability", 0)
-    # Map numeric prediction to a readable label for display and logic
-    label_map_short = {0: "Dropout", 1: "Enrolled", 2: "Graduate"}
-    try:
-        prediction_label = label_map_short.get(int(prediction_raw), str(prediction_raw))
-    except Exception:
-        prediction_label = str(prediction_raw)
 
     col_kpi1.metric("Total Units Enrolled", total_units)
     col_kpi2.metric("Average Semester Grade", f"{avg_grade:.2f}/20")
     col_kpi3.metric("Tuition Fees Up-to-Date", "✔ Yes" if fees_status==1 else "❌ No")
     col_kpi4.metric("Predicted Category", prediction_label)
-
-    # ---------------------- Benchmarks & Insight Logic ------------------
-    RECOMMENDED_AVG_GRADE = 10.0  # benchmark: passing/healthy average out of 20
-    # Expect about 75% of enrolled units to be approved as a simple benchmark
-    expected_approved_total = int(total_units * 0.75) if total_units > 0 else 0
-    units_1_approved = input_data["Curricular_units_1st_sem_approved"][0]
-    units_2_approved = input_data["Curricular_units_2nd_sem_approved"][0]
-    approved_total = units_1_approved + units_2_approved
-
-    below_recommended_avg = avg_grade < RECOMMENDED_AVG_GRADE
-    healthy_academic_load = approved_total >= expected_approved_total and total_units > 0
-
-    # Determine overall academic status
-    if prediction_label.startswith("Dropout") or (below_recommended_avg and not healthy_academic_load) or fees_status == 0:
-        overall_status = "High Risk"
-        status_color = "#E74C3C"
-    elif below_recommended_avg or not healthy_academic_load:
-        overall_status = "Moderate Risk"
-        status_color = "#F39C12"
-    else:
-        overall_status = "Low Risk"
-        status_color = "#27AE60"
-
-    # Key concern detection
-    key_concerns = []
-    if input_data["Curricular_units_2st_sem_grade"][0] < RECOMMENDED_AVG_GRADE:
-        key_concerns.append("Low 2nd semester grade")
-    if approved_total < expected_approved_total:
-        key_concerns.append("Lower-than-expected approved units")
-    if fees_status == 0:
-        key_concerns.append("Tuition payments pending")
-
-    key_concern_text = ", ".join(key_concerns) if key_concerns else "None"
-    # Recommended focus (simple, actionable suggestions)
-    recommended_actions = []
-    if "Low 2nd semester grade" in key_concerns:
-        recommended_actions.append("Academic tutoring")
-    if "Tuition payments pending" in key_concerns:
-        recommended_actions.append("Fee follow-up / financial aid check")
-    if "Lower-than-expected approved units" in key_concerns:
-        recommended_actions.append("Study plan & workload review")
-    if not recommended_actions:
-        recommended_actions.append("Continue regular monitoring and support")
 
     # ---------------------- Charts ----------------------------
     col1, col2, col3 = st.columns(3)
@@ -760,11 +516,6 @@ elif page == "📈 Dashboard":
             "Semester": ["1st", "2nd"],
             "Grade": [input_data["Curricular_units_1st_sem_grade"][0], input_data["Curricular_units_2st_sem_grade"][0]]
         }).set_index("Semester"))
-        # contextual annotation for grades
-        if input_data["Curricular_units_2st_sem_grade"][0] < RECOMMENDED_AVG_GRADE:
-            st.markdown("⚠️ **Below recommended average (≥10/20)** — consider targeted tutoring for low second-semester grades.")
-        else:
-            st.markdown("✔️ **Average grade meets or exceeds the recommended benchmark (≥10/20).**")
     with col2:
         st.subheader("Curricular Progress")
         st.bar_chart(pd.DataFrame({
@@ -775,11 +526,6 @@ elif page == "📈 Dashboard":
                 input_data["Curricular_units_1st_sem_approved"][0]
             ]
         }).set_index("Status"))
-        # contextual annotation for academic load
-        if healthy_academic_load:
-            st.markdown("✔️ **Healthy academic load** — approved units meet expectations.")
-        else:
-            st.markdown(f"⚠️ **Below expected approved units** (approved {approved_total} vs expected {expected_approved_total}).")
     with col3:
         st.subheader("Tuition Status")
         if fees_status==1:
@@ -787,24 +533,11 @@ elif page == "📈 Dashboard":
         else:
             st.error("Fees NOT up-to-date ❌")
 
-    # ---------------------- Summary Insight Card --------------------
-    st.markdown("---")
-    st.markdown(
-        f"""
-        <div style="background: rgba(250,250,250,0.9); padding:20px; border-radius:12px; border-left:6px solid {status_color};">
-            <h3 style="margin:0;">**Overall Academic Status:** {overall_status}</h3>
-            <p style="margin:6px 0 0 0;"><strong>Key Concern:</strong> {key_concern_text}</p>
-            <p style="margin:6px 0 0 0;"><strong>Recommended Focus:</strong> {', '.join(recommended_actions)}</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
 # ------------------------------------------------------------
 # ---------------------- FEATURE IMPORTANCE -------------------
 # ------------------------------------------------------------
-elif page == "🔥 What Influenced This Result?":
-    st.title("🔥 What Influenced This Result?")
+elif page == "🔥 Feature Importance":
+    st.title("🔥 Model Feature Importance")
 
     if "input_data" not in st.session_state:
         st.warning("⚠ Please make a prediction first on the Home page.")
@@ -819,10 +552,8 @@ elif page == "🔥 What Influenced This Result?":
             "Importance": importances
         }).sort_values("Importance", ascending=True)  # ascending for horizontal bars
 
-        st.subheader("📌 Ranking of Factors")
-        with st.expander("ℹ️ What does this mean?"):
-            st.info(TOOLTIP_WHAT_INFLUENCED)
-        st.write("The chart below displays the contribution of each factor to the model's decision.")
+        st.subheader("📌 Ranked Feature Importance")
+        st.write("The chart below displays the contribution of each feature to the model's decision.")
 
         # ----- Nicely formatted horizontal bar chart -----
         fig, ax = plt.subplots(figsize=(8, 6))
@@ -835,20 +566,18 @@ elif page == "🔥 What Influenced This Result?":
         st.pyplot(fig)
 
         # ----- Display table too -----
-        st.subheader("📋 Ranking Table - What Influenced the Prediction")
+        st.subheader("📋 Feature Importance Table (Sorted)")
         st.dataframe(fi_df[::-1].reset_index(drop=True))  # highest first
 
     except Exception as e:
-        st.warning("⚠ Factor analysis is not available for this model.")
+        st.warning("⚠ Feature importance is not available for this model.")
         st.text(str(e))
 
 # ------------------------------------------------------------
 # ---------------------- SHAP EXPLAINABILITY -----------------
 # ------------------------------------------------------------
-elif page == "🔍 Detailed Explanation (Advanced)":
-    st.title("🔍 Detailed Explanation (Advanced)")
-    with st.expander("ℹ️ How do I read this?", expanded=False):
-        st.info(TOOLTIP_DETAILED_EXPLANATION)
+elif page == "🔍 SHAP Explainability":
+    st.title("🔍 SHAP Explainability")
     if "input_data" not in st.session_state:
         st.warning("⚠ Please make a prediction first on the Home page.")
         st.stop()
@@ -874,181 +603,6 @@ elif page == "🔍 Detailed Explanation (Advanced)":
         st.warning("⚠ SHAP explanation is not available for this model.")
     
 # ------------------------------------------------------------
-# ---------------------- MODEL CALIBRATION PAGE ---------------
-# ------------------------------------------------------------
-elif page == "📊 Model Calibration":
-    st.title("📊 Model Confidence Calibration")
-    st.markdown("""
-    **Model calibration** measures whether the model's predicted probabilities align with actual outcomes.
-    A well-calibrated model says "70% confident" only when 70% of similar predictions are correct.
-    """)
-    
-    if "input_data" not in st.session_state:
-        st.warning("⚠ Please make a prediction first on the Home page to view calibration analysis.")
-        st.stop()
-    
-    input_data = st.session_state["input_data"]
-    prediction = st.session_state.get("prediction", 0)
-    probability = st.session_state.get("probability", 0.5)
-    
-    st.subheader("🎯 Current Prediction Confidence")
-    col1, col2, col3 = st.columns(3)
-    with col1:
-        st.metric("Predicted Class", prediction)
-    with col2:
-        st.metric("Confidence Score", f"{probability:.2%}")
-    with col3:
-        if probability >= 0.80:
-            st.metric("Confidence Level", "🟢 High")
-        elif probability >= 0.60:
-            st.metric("Confidence Level", "🟡 Moderate")
-        else:
-            st.metric("Confidence Level", "🔴 Low")
-    
-    st.markdown("---")
-    
-    # ===== CALIBRATION CURVE =====
-    st.subheader("📈 Reliability Diagram (Calibration Curve)")
-    st.markdown("""
-    This diagram shows the relationship between **predicted probability** (x-axis) and 
-    **actual frequency** (y-axis) for the student at-risk of dropout class.
-    
-    - **Perfect calibration**: Points lie on the diagonal (predicted = actual)
-    - **Overconfident**: Points below diagonal (predicted too high)
-    - **Underconfident**: Points above diagonal (predicted too low)
-    """)
-    
-    # Create sample calibration data for demonstration
-    # In a production system, this would use validation or test set data
-    np.random.seed(42)
-    n_samples = 100
-    
-    # Generate synthetic ground truth and predictions
-    y_true_demo = np.random.binomial(1, 0.3, n_samples)  # ~30% dropouts
-    # Predictions are correlated with truth for realism
-    y_pred_proba_demo = np.clip(
-        y_true_demo * 0.6 + np.random.normal(0, 0.2, n_samples),
-        0, 1
-    )
-    
-    # Calculate calibration metrics
-    try:
-        calibration_metrics = calculate_calibration_metrics(y_true_demo, y_pred_proba_demo, n_bins=5)
-        
-        # Plot calibration curve
-        fig, ax = plt.subplots(figsize=(8, 6))
-        
-        # Diagonal line (perfect calibration)
-        ax.plot([0, 1], [0, 1], 'k--', label='Perfect Calibration', linewidth=2)
-        
-        # Calibration curve
-        ax.plot(
-            calibration_metrics["prob_pred"],
-            calibration_metrics["prob_true"],
-            'o-', label='Model Calibration', linewidth=2, markersize=8, color='#2E86AB'
-        )
-        
-        ax.set_xlabel('Mean Predicted Probability', fontsize=12, fontweight='bold')
-        ax.set_ylabel('Actual Frequency', fontsize=12, fontweight='bold')
-        ax.set_title('Reliability Diagram: Model Calibration Assessment', fontsize=14, fontweight='bold')
-        ax.set_xlim([0, 1])
-        ax.set_ylim([0, 1])
-        ax.grid(True, alpha=0.3)
-        ax.legend(fontsize=11)
-        
-        plt.tight_layout()
-        st.pyplot(fig)
-        
-        # ===== CALIBRATION METRICS =====
-        st.markdown("---")
-        st.subheader("📊 Calibration Metrics")
-        
-        interpretation = get_calibration_interpretation(calibration_metrics)
-        
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.metric(
-                label="Brier Score",
-                value=f"{calibration_metrics['brier_score']:.4f}",
-                help="Mean squared error of probabilities (0 = perfect, 0.25 = random)"
-            )
-            st.markdown(f"**Status:** {interpretation['brier_status']}")
-        
-        with col2:
-            st.metric(
-                label="Expected Calibration Error (ECE)",
-                value=f"{calibration_metrics['ece']:.4f}",
-                help="Average gap between predicted and actual probabilities"
-            )
-            st.markdown(f"**Status:** {interpretation['ece_status']}")
-        
-        with col3:
-            st.metric(
-                label="Mean Predicted Probability",
-                value=f"{calibration_metrics['mean_probability']:.2%}",
-                help="Average confidence across all predictions"
-            )
-        
-        # ===== CALIBRATION INTERPRETATION =====
-        st.markdown("---")
-        st.subheader("💡 Model Calibration Insights")
-        
-        if calibration_metrics["is_overconfident"]:
-            st.warning(f"""
-            ### ⚠️ {interpretation['overconfidence_message']}
-            
-            **What this means:**
-            - The model tends to be **too confident** in its predictions
-            - Predicted probabilities may not reflect true reliability
-            - Actual outcome frequency is often lower than predicted
-            
-            **Recommendation:**
-            - Apply **calibration techniques** (e.g., Platt scaling, isotonic regression)
-            - Always verify high-confidence predictions with domain experts
-            - Use conservative thresholds for intervention decisions
-            """)
-        else:
-            st.success(f"""
-            ### ✅ {interpretation['overconfidence_message']}
-            
-            **What this means:**
-            - The model's confidence levels are well-aligned with actual outcomes
-            - Predicted probabilities are reliable for decision-making
-            - You can trust the model's confidence scores
-            
-            **How to use:**
-            - High confidence predictions (>0.8) can be acted upon more directly
-            - Moderate confidence (0.6-0.8) should include secondary verification
-            - Low confidence (<0.6) requires additional assessment methods
-            """)
-        
-        # ===== DETAILED INTERPRETATION =====
-        with st.expander("📖 Understanding These Metrics", expanded=False):
-            st.markdown(f"""
-            **Brier Score:**
-            - Measures the average squared difference between predicted probabilities and actual outcomes
-            - Range: 0 to 1 (lower is better)
-            - {interpretation['brier_message']}
-            
-            **Expected Calibration Error (ECE):**
-            - Estimates the average difference between predicted probability and empirical accuracy
-            - Range: 0 to 1 (lower is better)
-            - {interpretation['ece_message']}
-            
-            **Overconfidence Detection:**
-            - {interpretation['overconfidence_message']}
-            
-            **Key Insight:**
-            A model can have high accuracy but poor calibration, or low accuracy with good calibration.
-            Both accuracy AND calibration matter for trustworthy predictions.
-            """)
-        
-    except Exception as e:
-        st.error(f"Error calculating calibration metrics: {str(e)}")
-        st.info("Calibration analysis requires sufficient historical data for reliable estimates.")
-    
-# ------------------------------------------------------------
 # ------------------ ADMIN / LECTURER PROMPTS ----------------
 # ------------------------------------------------------------
 elif page == "📚 Admin / Lecturer Prompts":
@@ -1056,78 +610,6 @@ elif page == "📚 Admin / Lecturer Prompts":
     st.markdown(
         "Click a prompt below to send it to the Academic Assistant for professional insights and recommendations."
     )
-
-    # ------------------ Embedded Academic Assistant Chatbot ------------------
-    st.subheader("💬 Academic Assistant")
-    st.markdown("Use the assistant below for tailored advice. Quick prompts are provided for convenience.")
-    with st.expander("Open Academic Assistant", expanded=True):
-        if "chat_history" not in st.session_state:
-            st.session_state["chat_history"] = []
-
-        qp1, qp2, qp3 = st.columns([1,1,1])
-        quick_prompt = None
-        if qp1.button("Explain this prediction", key="admin_qp_explain"):
-            quick_prompt = "Explain this prediction for the current student profile."
-        if qp2.button("How can this student improve?", key="admin_qp_improve"):
-            quick_prompt = "How can this student improve their academic performance? Provide practical steps."
-        if qp3.button("What risks should I watch?", key="admin_qp_risks"):
-            quick_prompt = "What risks should instructors or advisors watch for with this student?"
-
-        user_input_chat = st.text_area("Message to assistant", key="admin_chat_input", height=80)
-        send = st.button("Send to Assistant", key="admin_send")
-        reset = st.button("Reset conversation", key="admin_reset")
-        if reset:
-            st.session_state["chat_history"] = []
-            st.success("Conversation reset.")
-
-        # Decide message to send
-        message_to_send = None
-        if quick_prompt:
-            message_to_send = quick_prompt
-        elif send and user_input_chat and user_input_chat.strip():
-            message_to_send = user_input_chat.strip()
-
-        if message_to_send:
-            st.session_state["chat_history"].append({"role":"user","text":message_to_send})
-            context = "You are a helpful academic assistant. Explain predictions, SHAP feature importance, and give advice based on student data."
-            used_student_data = False
-            if "input_data" in st.session_state:
-                used_student_data = True
-                try:
-                    context += f"\nStudent Data:\n{st.session_state['input_data'].to_dict(orient='records')[0]}"
-                except Exception:
-                    context += f"\nStudent Data:\n{str(st.session_state.get('input_data'))}"
-                if "prediction" in st.session_state and "probability" in st.session_state:
-                    context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence: {st.session_state['probability']:.2f}"
-            try:
-                openai.api_key = st.secrets["OPENAI_API_KEY"]
-                response = openai.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role":"system","content":context},
-                        {"role":"user","content":message_to_send}
-                    ],
-                    temperature=1,
-                    max_completion_tokens=400
-                )
-                answer = response.choices[0].message.content
-                st.session_state["chat_history"].append({"role":"assistant","text":answer,"used_student_data":used_student_data})
-            except Exception as e:
-                err = f"⚠ Error contacting OpenAI API: {e}"
-                st.session_state["chat_history"].append({"role":"assistant","text":err,"used_student_data":used_student_data})
-
-        # Display chat history
-        if st.session_state["chat_history"]:
-            for entry in st.session_state["chat_history"]:
-                if entry.get("role") == "user":
-                    st.markdown(f"**You:** {entry.get('text')}")
-                else:
-                    st.markdown(f"**Assistant:** {entry.get('text')}")
-                    if entry.get("used_student_data"):
-                        st.caption("Based on student data")
-                    else:
-                        st.caption("Generic advice")
-
 
     prompts = [
         " Summarize this student's academic risk profile and propose possible interventions, support actions, or advising strategies an instructor or academic department could use to help the student succeed.",
@@ -1265,9 +747,9 @@ elif page == "ℹ️ About":
     
     - **🎯 Student Performance Prediction** – Predicts if a student will dropout, remain enrolled, or graduate
     - **📊 Dashboard Visualization** – Dynamic KPIs showing student metrics and progress
-    - **🔥 What Influenced This Result?** – See which factors most influenced this prediction
-    - **🔍 Detailed Explanation (Advanced)** – Deep dive into how each factor pushed the prediction higher or lower
-    - **📈 Prediction Results** – Clear visualization of prediction outcomes with certainty scores
+    - **🔥 Feature Importance** – Understand which factors influence predictions most
+    - **🔍 SHAP Explainability** – Detailed model interpretability with SHAP force plots
+    - **📈 Prediction Results** – Clear visualization of prediction outcomes with confidence scores
     - **📚 Admin/Lecturer Prompts** – Pre-built prompts for institutional staff to generate insights
     - **💬 OpenAI-Powered Chatbot** – Interactive academic assistant for real-time guidance
     - **⭐ User Reviews** – Community feedback and ratings
@@ -1288,27 +770,27 @@ elif page == "ℹ️ About":
        - 1st semester units enrolled, evaluated, approved, and grades
        - 2nd semester units enrolled, evaluated, approved, and grades
     4. Click **"🔍 Predict Performance"** button
-    5. View the prediction result and certainty score
+    5. View the prediction result and confidence score
     
     ### Step 2: 📊 Prediction Results
     - Review your prediction in a dedicated results page
     - See the predicted category (Dropout, Enrolled, or Graduate)
-    - Check the certainty score (0-1 scale)
+    - Check the confidence score (0-1 scale)
     
     ### Step 3: 📈 Dashboard
     - View comprehensive KPIs for the student
     - See semester grades, curricular progress, and tuition status
     - Visualize academic metrics in interactive charts
     
-    ### Step 4: 🔥 What Influenced This Result?
+    ### Step 4: 🔥 Feature Importance
     - Understand which features impact the prediction most
-    - View a ranked bar chart showing which factors influenced the decision
-    - Access detailed factor ranking in table format
+    - View a ranked bar chart of feature contributions
+    - Access detailed importance scores in table format
     
-    ### Step 5: 🔍 Detailed Explanation (Advanced)
-    - Get detailed explanation showing how each factor affected the decision
-    - See visual diagrams showing how each factor pushed the prediction
-    - Understand exactly why the model predicted this outcome
+    ### Step 5: 🔍 SHAP Explainability
+    - Get detailed model interpretation with SHAP values
+    - View force plots showing individual feature contributions
+    - Understand why the model made a specific prediction
     
     ### Step 6: 📚 Admin / Lecturer Prompts
     - Access pre-built prompts for institutional users
