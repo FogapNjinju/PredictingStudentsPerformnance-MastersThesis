@@ -666,8 +666,14 @@ elif page == "📈 Dashboard":
     total_units = input_data["Curricular_units_1st_sem_enrolled"][0] + input_data["Curricular_units_2nd_sem_enrolled"][0]
     avg_grade = (input_data["Curricular_units_1st_sem_grade"][0] + input_data["Curricular_units_2st_sem_grade"][0]) / 2
     fees_status = input_data["Tuition_fees_up_to_date"][0]
-    prediction_label = st.session_state.get("prediction", "Unknown")
+    prediction_raw = st.session_state.get("prediction", "Unknown")
     probability = st.session_state.get("probability", 0)
+    # Map numeric prediction to a readable label for display and logic
+    label_map_short = {0: "Dropout", 1: "Enrolled", 2: "Graduate"}
+    try:
+        prediction_label = label_map_short.get(int(prediction_raw), str(prediction_raw))
+    except Exception:
+        prediction_label = str(prediction_raw)
 
     col_kpi1.metric("Total Units Enrolled", total_units)
     col_kpi2.metric("Average Semester Grade", f"{avg_grade:.2f}/20")
