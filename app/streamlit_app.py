@@ -319,37 +319,70 @@ if page == "🏠 Home (Prediction)":
 
     st.header("📝 Student Information")
     with st.form("prediction_form"):
-        st.subheader("Demographic & Background Information", help=why_demographic_background)
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            Age_at_enrollment = st.number_input("Age at Enrollment", 14, 100, 18, help = help_age)
-            mother_label = st.selectbox("Mother's Education Level", list(PARENT_OCCUPATION_MAP.keys()), help = help_parents_qual)
-            Mothers_occupation = PARENT_OCCUPATION_MAP[mother_label]
-            father_label = st.selectbox("Father's Education Level", list(PARENT_OCCUPATION_MAP.keys()), help = help_parents_qual)
-            Fathers_occupation = PARENT_OCCUPATION_MAP[father_label]
-        with col2:
-            Admission_grade = st.number_input("Admission Grade", 0.0, 200.0, help = help_admission_grade)
-            Tuition_fees_up_to_date = st.selectbox("Tuition Fees Up-to-Date?", list(TUITION_MAP.keys()), help = help_tuition)
-            Tuition_fees_up_to_date = TUITION_MAP[Tuition_fees_up_to_date]
-            Previous_qualification_grade = st.number_input("Previous Qualification Grade", 0.0, 300.0, help = help_prevqual)
-        with col3:
-            course_label = st.selectbox("Course", list(COURSE_MAP.keys()), help = help_course)
-            Course = COURSE_MAP[course_label]
-            Curricular_units_1st_sem_enrolled = st.number_input("1st Sem Units Enrolled", 0, 40, help = help_units_enrolled_1)
-            Curricular_units_1st_sem_approved = st.number_input("1st Sem Units Approved", 0, 40 , help = help_units_approved_1)
-        st.markdown("---")
-        st.subheader("🎓 Academic Performance Inputs",   help=why_academic_performance)
-        col4, col5 = st.columns(2)
-        with col4:
-            Curricular_units_1st_sem_evaluations = st.number_input("1st Sem Evaluations", 0, 100, help = help_units_eval_1)
-            Curricular_units_1st_sem_grade = st.number_input("1st Sem Grade", 0.0, 20.0, help = help_units_grade_1)
-            Curricular_units_2nd_sem_enrolled = st.number_input("2nd Sem Units Enrolled", 0, 40, help = help_units_enrolled_2)
-        with col5:
-            Curricular_units_2nd_sem_approved = st.number_input("2nd Sem Units Approved", 0, 40, help = help_units_approved_2)
-            Curricular_units_2nd_sem_evaluations = st.number_input("2nd Sem Evaluations", 0, 100, help = help_units_eval_2)
-            Curricular_units_2st_sem_grade = st.number_input("2nd Sem Grade", 0.0, 20.0, help = help_units_grade_2)
-        submitted = st.form_submit_button("🔍 Predict Performance", use_container_width=True)
+        # ===============================
+        # STEP 1: DEMOGRAPHICS
+        # ===============================
+        with st.expander("🧍 Step 1: Demographics & Background", expanded=True):
+            col1, col2, col3 = st.columns(3)
 
+            with col1:
+                Age_at_enrollment = st.number_input("Age at Enrollment", 14, 100, 18)
+                mother_label = st.selectbox("Mother's Education Level", PARENT_OCCUPATION_MAP.keys())
+                Mothers_occupation = PARENT_OCCUPATION_MAP[mother_label]
+
+            with col2:
+                father_label = st.selectbox("Father's Education Level", PARENT_OCCUPATION_MAP.keys())
+                Fathers_occupation = PARENT_OCCUPATION_MAP[father_label]
+                tuition_label = st.selectbox("Tuition Fees Status", TUITION_MAP.keys())
+                Tuition_fees_up_to_date = TUITION_MAP[tuition_label]
+
+            with col3:
+                course_label = st.selectbox("Course", COURSE_MAP.keys())
+                Course = COURSE_MAP[course_label]
+                Admission_grade = st.number_input("Admission Grade", 0.0, 200.0)
+                Previous_qualification_grade = st.number_input("Previous Qualification Grade", 0.0, 300.0)
+
+        # ===============================
+        # STEP 2: SEMESTER 1
+        # ===============================
+        with st.expander("📘 Step 2: Academic Performance – Semester 1"):
+            col4, col5 = st.columns(2)
+
+            with col4:
+                Curricular_units_1st_sem_enrolled = st.number_input("Units Enrolled", 0, 40)
+                Curricular_units_1st_sem_evaluations = st.number_input("Evaluations", 0, 100)
+
+            with col5:
+                Curricular_units_1st_sem_approved = st.number_input("Units Approved", 0, 40)
+                Curricular_units_1st_sem_grade = st.number_input("Average Grade", 0.0, 20.0)
+
+            if Curricular_units_1st_sem_approved > Curricular_units_1st_sem_enrolled:
+                st.warning("⚠ Approved units cannot exceed enrolled units.")
+
+            if Curricular_units_1st_sem_grade == 0 and Curricular_units_1st_sem_approved > 0:
+                st.warning("⚠ Grade is 0 but units are approved. Please verify.")
+
+        # ===============================
+        # STEP 3: SEMESTER 2
+        # ===============================
+        with st.expander("📗 Step 3: Academic Performance – Semester 2"):
+            col6, col7 = st.columns(2)
+
+            with col6:
+                Curricular_units_2nd_sem_enrolled = st.number_input("Units Enrolled ", 0, 40)
+                Curricular_units_2nd_sem_evaluations = st.number_input("Evaluations ", 0, 100)
+
+            with col7:
+                Curricular_units_2nd_sem_approved = st.number_input("Units Approved ", 0, 40)
+                Curricular_units_2st_sem_grade = st.number_input("Average Grade ", 0.0, 20.0)
+
+            if Curricular_units_2nd_sem_approved > Curricular_units_2nd_sem_enrolled:
+                st.warning("⚠ Approved units cannot exceed enrolled units.")
+
+            if Curricular_units_2st_sem_grade == 0 and Curricular_units_2nd_sem_approved > 0:
+                st.warning("⚠ Grade is 0 but units are approved. Please verify.")
+                
+    submitted = st.form_submit_button("🔍 Predict Performance", use_container_width=True)
     if submitted:
         input_data = pd.DataFrame([{
             "Curricular_units_2nd_sem_approved": Curricular_units_2nd_sem_approved,
