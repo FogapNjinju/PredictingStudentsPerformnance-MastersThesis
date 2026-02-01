@@ -180,87 +180,7 @@ page = st.sidebar.radio(
     ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 What Influenced This Result?", "🔍 Detailed Explanation (Advanced)","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
 )
 
-# ------------------------------------------------------------
-# Sidebar OpenAI Chatbot (enhanced UX)
-# ------------------------------------------------------------
-st.sidebar.header("💬 Academic Assistant")
-if "chat_history" not in st.session_state:
-    # chat entries are dicts: {"role":"user"/"assistant", "text":..., "used_student_data":bool}
-    st.session_state["chat_history"] = []
-
-# Quick prompt buttons to lower friction
-st.sidebar.markdown("### Quick prompts")
-qp_col1, qp_col2, qp_col3 = st.sidebar.columns(3)
-quick_prompt = None
-if qp_col1.button("Explain this prediction", key="qp_explain"):
-    quick_prompt = "Explain this prediction for the current student profile."
-if qp_col2.button("How can this student improve?", key="qp_improve"):
-    quick_prompt = "How can this student improve their academic performance? Provide practical steps."
-if qp_col3.button("What risks should I watch?", key="qp_risks"):
-    quick_prompt = "What risks should instructors or advisors watch for with this student?"
-
-st.sidebar.markdown("---")
-input_text = st.sidebar.text_input("Ask the assistant:", "")
-
-# Reset conversation control
-if st.sidebar.button("Reset conversation", key="reset_chat"):
-    st.session_state["chat_history"] = []
-    st.sidebar.success("Conversation reset.")
-
-# Determine which user message to send (direct input has priority unless quick prompt selected)
-user_message = None
-if quick_prompt:
-    user_message = quick_prompt
-elif input_text and input_text.strip():
-    user_message = input_text.strip()
-
-if user_message:
-    # record user's message
-    st.session_state["chat_history"].append({"role": "user", "text": user_message})
-
-    # Build context and decide if student data should be included
-    context = "You are a helpful academic assistant. Explain predictions, SHAP feature importance, and give advice based on student data."
-    used_student_data = False
-    if "input_data" in st.session_state:
-        used_student_data = True
-        try:
-            context += f"\nStudent Data:\n{st.session_state['input_data'].to_dict(orient='records')[0]}"
-        except Exception:
-            # fall back to string conversion
-            context += f"\nStudent Data:\n{str(st.session_state.get('input_data'))}"
-        if "prediction" in st.session_state and "probability" in st.session_state:
-            context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence: {st.session_state['probability']:.2f}"
-
-    try:
-        openai.api_key = st.secrets["OPENAI_API_KEY"]
-        response = openai.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=[
-                {"role": "system", "content": context},
-                {"role": "user", "content": user_message}
-            ],
-            temperature=1,
-            max_completion_tokens=300
-        )
-        answer = response.choices[0].message.content
-        st.session_state["chat_history"].append({"role": "assistant", "text": answer, "used_student_data": used_student_data})
-    except Exception as e:
-        answer = f"⚠ Error contacting OpenAI API: {e}"
-        st.session_state["chat_history"].append({"role": "assistant", "text": answer, "used_student_data": used_student_data})
-
-# Render chat history with clear badges when responses used student data
-for entry in st.session_state["chat_history"]:
-    if isinstance(entry, dict) and entry.get("role") == "user":
-        st.sidebar.markdown(f"**Student:** {entry.get('text')}" )
-    elif isinstance(entry, dict) and entry.get("role") == "assistant":
-        st.sidebar.markdown(f"**Assistant:** {entry.get('text')}")
-        if entry.get("used_student_data"):
-            st.sidebar.caption("Based on student data")
-        else:
-            st.sidebar.caption("Generic advice")
-    else:
-        # backward compatibility for any raw strings
-        st.sidebar.markdown(str(entry))
+st.sidebar.info("💬 Academic Assistant moved to the Admin / Lecturer Prompts page (open '📚 Admin / Lecturer Prompts' from Navigation).")
 
 # ------------------------------------------------------------
 # Load Model Artifacts
@@ -894,6 +814,78 @@ elif page == "📚 Admin / Lecturer Prompts":
     st.markdown(
         "Click a prompt below to send it to the Academic Assistant for professional insights and recommendations."
     )
+
+    # ------------------ Embedded Academic Assistant Chatbot ------------------
+    st.subheader("💬 Academic Assistant")
+    st.markdown("Use the assistant below for tailored advice. Quick prompts are provided for convenience.")
+    with st.expander("Open Academic Assistant", expanded=True):
+        if "chat_history" not in st.session_state:
+            st.session_state["chat_history"] = []
+
+        qp1, qp2, qp3 = st.columns([1,1,1])
+        quick_prompt = None
+        if qp1.button("Explain this prediction", key="admin_qp_explain"):
+            quick_prompt = "Explain this prediction for the current student profile."
+        if qp2.button("How can this student improve?", key="admin_qp_improve"):
+            quick_prompt = "How can this student improve their academic performance? Provide practical steps."
+        if qp3.button("What risks should I watch?", key="admin_qp_risks"):
+            quick_prompt = "What risks should instructors or advisors watch for with this student?"
+
+        user_input_chat = st.text_area("Message to assistant", key="admin_chat_input", height=80)
+        send = st.button("Send to Assistant", key="admin_send")
+        reset = st.button("Reset conversation", key="admin_reset")
+        if reset:
+            st.session_state["chat_history"] = []
+            st.success("Conversation reset.")
+
+        # Decide message to send
+        message_to_send = None
+        if quick_prompt:
+            message_to_send = quick_prompt
+        elif send and user_input_chat and user_input_chat.strip():
+            message_to_send = user_input_chat.strip()
+
+        if message_to_send:
+            st.session_state["chat_history"].append({"role":"user","text":message_to_send})
+            context = "You are a helpful academic assistant. Explain predictions, SHAP feature importance, and give advice based on student data."
+            used_student_data = False
+            if "input_data" in st.session_state:
+                used_student_data = True
+                try:
+                    context += f"\nStudent Data:\n{st.session_state['input_data'].to_dict(orient='records')[0]}"
+                except Exception:
+                    context += f"\nStudent Data:\n{str(st.session_state.get('input_data'))}"
+                if "prediction" in st.session_state and "probability" in st.session_state:
+                    context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence: {st.session_state['probability']:.2f}"
+            try:
+                openai.api_key = st.secrets["OPENAI_API_KEY"]
+                response = openai.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {"role":"system","content":context},
+                        {"role":"user","content":message_to_send}
+                    ],
+                    temperature=1,
+                    max_completion_tokens=400
+                )
+                answer = response.choices[0].message.content
+                st.session_state["chat_history"].append({"role":"assistant","text":answer,"used_student_data":used_student_data})
+            except Exception as e:
+                err = f"⚠ Error contacting OpenAI API: {e}"
+                st.session_state["chat_history"].append({"role":"assistant","text":err,"used_student_data":used_student_data})
+
+        # Display chat history
+        if st.session_state["chat_history"]:
+            for entry in st.session_state["chat_history"]:
+                if entry.get("role") == "user":
+                    st.markdown(f"**You:** {entry.get('text')}")
+                else:
+                    st.markdown(f"**Assistant:** {entry.get('text')}")
+                    if entry.get("used_student_data"):
+                        st.caption("Based on student data")
+                    else:
+                        st.caption("Generic advice")
+
 
     prompts = [
         " Summarize this student's academic risk profile and propose possible interventions, support actions, or advising strategies an instructor or academic department could use to help the student succeed.",
