@@ -382,7 +382,7 @@ if page == "🏠 Home (Prediction)":
             if Curricular_units_2st_sem_grade == 0 and Curricular_units_2nd_sem_approved > 0:
                 st.warning("⚠ Grade is 0 but units are approved. Please verify.")
                 
-    submitted = st.form_submit_button("🔍 Predict Performance", use_container_width=True)
+        submitted = st.form_submit_button("🔍 Predict Performance", use_container_width=True)
     if submitted:
         input_data = pd.DataFrame([{
             "Curricular_units_2nd_sem_approved": Curricular_units_2nd_sem_approved,
