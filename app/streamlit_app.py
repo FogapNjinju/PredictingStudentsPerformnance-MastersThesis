@@ -180,7 +180,6 @@ page = st.sidebar.radio(
     ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 What Influenced This Result?", "🔍 Detailed Explanation (Advanced)","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
 )
 
-st.sidebar.info("💬 Academic Assistant moved to the Admin / Lecturer Prompts page (open '📚 Admin / Lecturer Prompts' from Navigation).")
 
 # ------------------------------------------------------------
 # Load Model Artifacts
