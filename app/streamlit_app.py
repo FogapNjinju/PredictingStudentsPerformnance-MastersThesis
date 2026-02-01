@@ -173,12 +173,10 @@ div[role='radiogroup'] > label:hover {
 # ------------------------------------------------------------
 # Sidebar Navigation
 # ------------------------------------------------------------
+st.sidebar.title("📊 Navigation")
 page = st.sidebar.radio(
     "Go to:",
-    ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", 
-     "🔥 Feature Importance", "🔍 SHAP Explainability",
-     "📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"],
-    key="sidebar_navigation"
+    ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 Feature Importance", "🔍 SHAP Explainability","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
 )
 
 # ------------------------------------------------------------
