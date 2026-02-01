@@ -181,19 +181,53 @@ page = st.sidebar.radio(
 )
 
 # ------------------------------------------------------------
-# Sidebar OpenAI Chatbot
+# Sidebar OpenAI Chatbot (enhanced UX)
 # ------------------------------------------------------------
 st.sidebar.header("💬 Academic Assistant")
 if "chat_history" not in st.session_state:
+    # chat entries are dicts: {"role":"user"/"assistant", "text":..., "used_student_data":bool}
     st.session_state["chat_history"] = []
 
-user_input = st.sidebar.text_input("Ask the assistant:", "")
-if user_input:
-    st.session_state["chat_history"].append(f"Student: {user_input}")
+# Quick prompt buttons to lower friction
+st.sidebar.markdown("### Quick prompts")
+qp_col1, qp_col2, qp_col3 = st.sidebar.columns(3)
+quick_prompt = None
+if qp_col1.button("Explain this prediction", key="qp_explain"):
+    quick_prompt = "Explain this prediction for the current student profile."
+if qp_col2.button("How can this student improve?", key="qp_improve"):
+    quick_prompt = "How can this student improve their academic performance? Provide practical steps."
+if qp_col3.button("What risks should I watch?", key="qp_risks"):
+    quick_prompt = "What risks should instructors or advisors watch for with this student?"
 
+st.sidebar.markdown("---")
+input_text = st.sidebar.text_input("Ask the assistant:", "")
+
+# Reset conversation control
+if st.sidebar.button("Reset conversation", key="reset_chat"):
+    st.session_state["chat_history"] = []
+    st.sidebar.success("Conversation reset.")
+
+# Determine which user message to send (direct input has priority unless quick prompt selected)
+user_message = None
+if quick_prompt:
+    user_message = quick_prompt
+elif input_text and input_text.strip():
+    user_message = input_text.strip()
+
+if user_message:
+    # record user's message
+    st.session_state["chat_history"].append({"role": "user", "text": user_message})
+
+    # Build context and decide if student data should be included
     context = "You are a helpful academic assistant. Explain predictions, SHAP feature importance, and give advice based on student data."
+    used_student_data = False
     if "input_data" in st.session_state:
-        context += f"\nStudent Data:\n{st.session_state['input_data'].to_dict(orient='records')[0]}"
+        used_student_data = True
+        try:
+            context += f"\nStudent Data:\n{st.session_state['input_data'].to_dict(orient='records')[0]}"
+        except Exception:
+            # fall back to string conversion
+            context += f"\nStudent Data:\n{str(st.session_state.get('input_data'))}"
         if "prediction" in st.session_state and "probability" in st.session_state:
             context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence: {st.session_state['probability']:.2f}"
 
@@ -203,22 +237,30 @@ if user_input:
             model="gpt-4o-mini",
             messages=[
                 {"role": "system", "content": context},
-                {"role": "user", "content": user_input}
+                {"role": "user", "content": user_message}
             ],
             temperature=1,
             max_completion_tokens=300
         )
         answer = response.choices[0].message.content
-        st.session_state["chat_history"].append(f"Assistant: {answer}")
+        st.session_state["chat_history"].append({"role": "assistant", "text": answer, "used_student_data": used_student_data})
     except Exception as e:
         answer = f"⚠ Error contacting OpenAI API: {e}"
-        st.session_state["chat_history"].append(f"Assistant: {answer}")
+        st.session_state["chat_history"].append({"role": "assistant", "text": answer, "used_student_data": used_student_data})
 
-for chat in st.session_state["chat_history"]:
-    if chat.startswith("Student:"):
-        st.sidebar.markdown(f"**{chat}**")
+# Render chat history with clear badges when responses used student data
+for entry in st.session_state["chat_history"]:
+    if isinstance(entry, dict) and entry.get("role") == "user":
+        st.sidebar.markdown(f"**Student:** {entry.get('text')}" )
+    elif isinstance(entry, dict) and entry.get("role") == "assistant":
+        st.sidebar.markdown(f"**Assistant:** {entry.get('text')}")
+        if entry.get("used_student_data"):
+            st.sidebar.caption("Based on student data")
+        else:
+            st.sidebar.caption("Generic advice")
     else:
-        st.sidebar.markdown(chat)
+        # backward compatibility for any raw strings
+        st.sidebar.markdown(str(entry))
 
 # ------------------------------------------------------------
 # Load Model Artifacts
