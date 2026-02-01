@@ -175,44 +175,50 @@ div[role='radiogroup'] > label:hover {
 # Sidebar Navigation
 # ------------------------------------------------------------
 st.sidebar.title("📊 Navigation")
-
-# List of all pages
-all_pages = ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 What Influenced This Result?", "🔍 Detailed Explanation (Advanced)","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
-
 page = st.sidebar.radio(
     "Go to:",
-    all_pages
+    ["🏠 Home (Prediction)", "📊 Prediction Results","📈 Dashboard", "🔥 Feature Importance", "🔍 SHAP Explainability","📚 Admin / Lecturer Prompts","⭐ Reviews & Feedback", "ℹ️ About"]
 )
 
-st.sidebar.info("💬 **Academic Assistant:** Available in the Admin/Lecturer Prompts page for contextual AI advice.")
+# ------------------------------------------------------------
+# Sidebar OpenAI Chatbot
+# ------------------------------------------------------------
+st.sidebar.header("💬 Academic Assistant")
+if "chat_history" not in st.session_state:
+    st.session_state["chat_history"] = []
 
-# ============================================================
-# TOP NAVIGATION BAR (Mobile-friendly alternative to sidebar)
-# ============================================================
-st.markdown("**📑 Quick Navigation by Category:**")
+user_input = st.sidebar.text_input("Ask the assistant:", "")
+if user_input:
+    st.session_state["chat_history"].append(f"Student: {user_input}")
 
-# Group pages by category for better UX and cleaner interface
-nav_sections = {
-    "📋 Student Data": ["🏠 Home (Prediction)", "📊 Prediction Results", "📈 Dashboard"],
-    "🔬 Analysis": ["🔥 What Influenced This Result?", "🔍 Detailed Explanation (Advanced)"],
-    "🛠️ Tools": ["📚 Admin / Lecturer Prompts", "⭐ Reviews & Feedback"],
-    "ℹ️ Info": ["ℹ️ About"]
-}
+    context = "You are a helpful academic assistant. Explain predictions, SHAP feature importance, and give advice based on student data."
+    if "input_data" in st.session_state:
+        context += f"\nStudent Data:\n{st.session_state['input_data'].to_dict(orient='records')[0]}"
+        if "prediction" in st.session_state and "probability" in st.session_state:
+            context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence: {st.session_state['probability']:.2f}"
 
-# Create top nav with dropdown selectors per category
-nav_cols = st.columns(len(nav_sections))
-for col, (section_name, section_pages) in zip(nav_cols, nav_sections.items()):
-    with col:
-        selected = st.selectbox(
-            section_name,
-            section_pages,
-            label_visibility="collapsed",
-            key=f"nav_section_{section_name}"
+    try:
+        openai.api_key = st.secrets["OPENAI_API_KEY"]
+        response = openai.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": context},
+                {"role": "user", "content": user_input}
+            ],
+            temperature=1,
+            max_completion_tokens=300
         )
-        if selected:
-            page = selected
+        answer = response.choices[0].message.content
+        st.session_state["chat_history"].append(f"Assistant: {answer}")
+    except Exception as e:
+        answer = f"⚠ Error contacting OpenAI API: {e}"
+        st.session_state["chat_history"].append(f"Assistant: {answer}")
 
-st.markdown("---")
+for chat in st.session_state["chat_history"]:
+    if chat.startswith("Student:"):
+        st.sidebar.markdown(f"**{chat}**")
+    else:
+        st.sidebar.markdown(chat)
 
 # ------------------------------------------------------------
 # Load Model Artifacts
@@ -229,144 +235,9 @@ def load_artifacts():
 
 model, pipeline = load_artifacts()
 
-# ============================================================
-# Helper Functions for Actionable Recommendations
-# ============================================================
-
-def get_confidence_interpretation(confidence):
-    """Interpret confidence score and return color + interpretation"""
-    if confidence >= 0.90:
-        return {
-            "level": "🟢 Very High Certainty",
-            "description": "The model is very confident in this prediction.",
-            "color": "green",
-            "interpretation": "Use this prediction with high confidence for decision-making."
-        }
-    elif confidence >= 0.70:
-        return {
-            "level": "🟡 Moderate Confidence",
-            "description": "The model has reasonable confidence in this prediction.",
-            "color": "orange",
-            "interpretation": "This prediction is reliable but should be considered alongside other factors."
-        }
-    else:
-        return {
-            "level": "🔴 Use with Caution",
-            "description": "The model's confidence is below typical thresholds.",
-            "color": "red",
-            "interpretation": "This prediction is uncertain. Verify with additional assessment methods."
-        }
-
-def get_actionable_recommendations(prediction_label, confidence, input_data):
-    """Generate actionable recommendations based on prediction outcome"""
-    
-    if prediction_label.startswith("Dropout"):
-        return {
-            "status": "🚨 INTERVENTION REQUIRED",
-            "status_color": "error",
-            "title": "Student At-Risk of Dropout",
-            "actions": [
-                "📞 **Contact Student Immediately** – Reach out within 48 hours to understand challenges",
-                "📋 **Academic Assessment** – Review performance data; identify struggling subjects",
-                "💰 **Check Financial Status** – Verify tuition payments and financial aid eligibility",
-                "🤝 **Assign Mentor/Advisor** – Pair with academic or peer mentor for support",
-                "📚 **Tutoring Referral** – Recommend subject-specific or general tutoring services",
-                "🎯 **Create Support Plan** – Develop written action plan with clear milestones",
-                "📊 **Monitor Progress** – Schedule regular check-ins (weekly/bi-weekly)",
-                "🏫 **Campus Resources** – Connect with counseling, career services, or disability support"
-            ],
-            "urgency": "HIGH",
-            "timeline": "Immediate action required"
-        }
-    
-    elif prediction_label.startswith("Enrolled"):
-        return {
-            "status": "⚠️ ONGOING MONITORING",
-            "status_color": "warning",
-            "title": "Student On Track – Requires Support",
-            "actions": [
-                "✅ **Positive Reinforcement** – Acknowledge effort and progress made",
-                "🔍 **Identify Risk Factors** – Use SHAP analysis to see what could cause dropout",
-                "🎯 **Set Academic Goals** – Help student establish semester/year targets",
-                "📈 **Monitor Grade Trends** – Track progression to ensure grades don't decline",
-                "🤝 **Peer Support** – Encourage study groups and peer collaboration",
-                "💪 **Build Resilience** – Teach time management, stress management techniques",
-                "🌟 **Challenge & Engage** – Offer opportunities for academic enrichment",
-                "📅 **Scheduled Check-ins** – Monthly progress reviews to stay on track"
-            ],
-            "urgency": "MEDIUM",
-            "timeline": "Regular monitoring recommended"
-        }
-    
-    else:  # Graduate
-        return {
-            "status": "🎓 ON TRACK FOR SUCCESS",
-            "status_color": "success",
-            "title": "Student Likely to Graduate",
-            "actions": [
-                "🌟 **Positive Recognition** – Celebrate strong academic performance",
-                "🎓 **Graduation Planning** – Begin final degree requirements checklist",
-                "💼 **Career Development** – Connect with career services for post-graduation planning",
-                "📚 **Advanced Opportunities** – Suggest honors programs, research, or internships",
-                "🔗 **Alumni Network** – Prepare for transition to alumni community",
-                "💬 **Peer Mentoring** – Encourage student to mentor struggling peers",
-                "🎯 **Post-Graduation Goals** – Discuss grad school or employment plans",
-                "🏆 **Recognition** – Consider for scholarships, awards, or leadership roles"
-            ],
-            "urgency": "LOW",
-            "timeline": "Supportive monitoring"
-        }
-
-
-# ============================================================
-# Plain Language Explanations & Tooltips
-# ============================================================
-
-TOOLTIP_PREDICTION_CERTAINTY = """
-**Prediction Certainty** (0.0 - 1.0):
-- **0.9+** = The model is very sure about this prediction
-- **0.7-0.89** = The model is reasonably confident
-- **Below 0.7** = The prediction is uncertain; verify with other methods
-"""
-
-TOOLTIP_WHAT_INFLUENCED = """
-**What Influenced This Result?**
-This shows which student factors had the biggest impact on the prediction.
-Factors at the top pushed the prediction most strongly.
-Think of it like a recipe - this shows which ingredients matter most.
-"""
-
-TOOLTIP_DETAILED_EXPLANATION = """
-**Detailed Explanation (Advanced)**
-This shows exactly HOW each factor influenced the prediction.
-- Green factors pushed toward "Graduate"
-- Red factors pushed toward "Dropout"
-- Length of bar = strength of influence
-
-Example: If "2nd semester grade" has a long red bar,
-that low grade is a major reason for the dropout prediction.
-"""
-
-TOOLTIP_PREDICTION_RESULT = """
-**What's this prediction?**
-The model learned patterns from many students to predict three outcomes:
-- 🚫 Dropout: Student likely to leave before graduating
-- 📚 Enrolled: Student likely to continue but timeline uncertain
-- 🎓 Graduate: Student likely to complete degree
-"""
-
-def show_tooltip(title, content, color="info"):
-    """Display a formatted tooltip"""
-    if color == "info":
-        st.info(content)
-    elif color == "warning":
-        st.warning(content)
-    elif color == "success":
-        st.success(content)
-
-# ============================================================
+# ------------------------------------------------------------
 # Global variables
-# ============================================================
+# ------------------------------------------------------------
 prediction = None
 probability = None
 input_data = None
@@ -451,12 +322,12 @@ if page == "🏠 Home (Prediction)":
         # ===============================
         # STEP 1: DEMOGRAPHICS
         # ===============================
-        with st.expander("🧍 Step 1: Demographics & Background", expanded=True):
+        with st.expander("🧍 Step 1: Demographics & Background", expanded=True, help=why_demographic_background):
             col1, col2, col3 = st.columns(3)
 
             with col1:
                 Age_at_enrollment = st.number_input("Age at Enrollment", 14, 100, 18, help=help_age)
-                mother_label = st.selectbox("Mother's Education Level", PARENT_OCCUPATION_MAP.keys())
+                mother_label = st.selectbox("Mother's Education Level", PARENT_OCCUPATION_MAP.keys(), help=help_parents_qual)
                 Mothers_occupation = PARENT_OCCUPATION_MAP[mother_label]
 
             with col2:
@@ -474,7 +345,7 @@ if page == "🏠 Home (Prediction)":
         # ===============================
         # STEP 2: SEMESTER 1
         # ===============================
-        with st.expander("📘 Step 2: Academic Performance – Semester 1"):
+        with st.expander("📘 Step 2: Academic Performance – Semester 1", help=why_academic_performance):
             col4, col5 = st.columns(2)
 
             with col4:
@@ -494,7 +365,7 @@ if page == "🏠 Home (Prediction)":
         # ===============================
         # STEP 3: SEMESTER 2
         # ===============================
-        with st.expander("📗 Step 3: Academic Performance – Semester 2"):
+        with st.expander("📗 Step 3: Academic Performance – Semester 2", help=why_academic_performance):
             col6, col7 = st.columns(2)
 
             with col6:
@@ -536,42 +407,11 @@ if page == "🏠 Home (Prediction)":
         prediction_label = label_map.get(prediction, "Unknown")
         st.markdown("---")
         st.header("📊 Prediction Results")
-        with st.expander("ℹ️ What does this prediction mean?", expanded=False):
-            st.info(TOOLTIP_PREDICTION_RESULT)
         colA, colB = st.columns(2)
         with colA:
             st.metric("Predicted Category", prediction_label)
         with colB:
-            st.metric("Prediction Certainty", f"{probability:.2f}")
-        
-        # ===== CONFIDENCE INTERPRETATION =====
-        confidence_info = get_confidence_interpretation(probability)
-        col_conf1, col_conf2 = st.columns([1, 2])
-        with col_conf1:
-            st.metric("Certainty Level", confidence_info["level"])
-        with col_conf2:
-            st.info(f"**{confidence_info['interpretation']}**")
-        
-        st.markdown("---")
-        
-        # ===== ACTIONABLE RECOMMENDATIONS =====
-        recommendations = get_actionable_recommendations(prediction_label, probability, input_data)
-        
-        if recommendations["status_color"] == "error":
-            st.error(f"### {recommendations['status']}")
-        elif recommendations["status_color"] == "warning":
-            st.warning(f"### {recommendations['status']}")
-        else:
-            st.success(f"### {recommendations['status']}")
-        
-        st.subheader(f"📋 {recommendations['title']}")
-        st.markdown(f"**Urgency Level:** {recommendations['urgency']} | **Timeline:** {recommendations['timeline']}")
-        
-        st.markdown("### ✅ Recommended Actions:")
-        for i, action in enumerate(recommendations["actions"], 1):
-            st.markdown(f"{i}. {action}")
-        
-        st.markdown("---")
+            st.metric("Confidence Score", f"{probability:.2f}")
         st.success(f"🎯 The student is predicted to **{prediction_label}** with a confidence of **{probability:.2f}**.")
         st.session_state["input_data"] = input_data
         st.session_state["prediction"] = prediction
@@ -660,62 +500,13 @@ elif page == "📈 Dashboard":
     total_units = input_data["Curricular_units_1st_sem_enrolled"][0] + input_data["Curricular_units_2nd_sem_enrolled"][0]
     avg_grade = (input_data["Curricular_units_1st_sem_grade"][0] + input_data["Curricular_units_2st_sem_grade"][0]) / 2
     fees_status = input_data["Tuition_fees_up_to_date"][0]
-    prediction_raw = st.session_state.get("prediction", "Unknown")
+    prediction_label = st.session_state.get("prediction", "Unknown")
     probability = st.session_state.get("probability", 0)
-    # Map numeric prediction to a readable label for display and logic
-    label_map_short = {0: "Dropout", 1: "Enrolled", 2: "Graduate"}
-    try:
-        prediction_label = label_map_short.get(int(prediction_raw), str(prediction_raw))
-    except Exception:
-        prediction_label = str(prediction_raw)
 
     col_kpi1.metric("Total Units Enrolled", total_units)
     col_kpi2.metric("Average Semester Grade", f"{avg_grade:.2f}/20")
     col_kpi3.metric("Tuition Fees Up-to-Date", "✔ Yes" if fees_status==1 else "❌ No")
     col_kpi4.metric("Predicted Category", prediction_label)
-
-    # ---------------------- Benchmarks & Insight Logic ------------------
-    RECOMMENDED_AVG_GRADE = 10.0  # benchmark: passing/healthy average out of 20
-    # Expect about 75% of enrolled units to be approved as a simple benchmark
-    expected_approved_total = int(total_units * 0.75) if total_units > 0 else 0
-    units_1_approved = input_data["Curricular_units_1st_sem_approved"][0]
-    units_2_approved = input_data["Curricular_units_2nd_sem_approved"][0]
-    approved_total = units_1_approved + units_2_approved
-
-    below_recommended_avg = avg_grade < RECOMMENDED_AVG_GRADE
-    healthy_academic_load = approved_total >= expected_approved_total and total_units > 0
-
-    # Determine overall academic status
-    if prediction_label.startswith("Dropout") or (below_recommended_avg and not healthy_academic_load) or fees_status == 0:
-        overall_status = "High Risk"
-        status_color = "#E74C3C"
-    elif below_recommended_avg or not healthy_academic_load:
-        overall_status = "Moderate Risk"
-        status_color = "#F39C12"
-    else:
-        overall_status = "Low Risk"
-        status_color = "#27AE60"
-
-    # Key concern detection
-    key_concerns = []
-    if input_data["Curricular_units_2st_sem_grade"][0] < RECOMMENDED_AVG_GRADE:
-        key_concerns.append("Low 2nd semester grade")
-    if approved_total < expected_approved_total:
-        key_concerns.append("Lower-than-expected approved units")
-    if fees_status == 0:
-        key_concerns.append("Tuition payments pending")
-
-    key_concern_text = ", ".join(key_concerns) if key_concerns else "None"
-    # Recommended focus (simple, actionable suggestions)
-    recommended_actions = []
-    if "Low 2nd semester grade" in key_concerns:
-        recommended_actions.append("Academic tutoring")
-    if "Tuition payments pending" in key_concerns:
-        recommended_actions.append("Fee follow-up / financial aid check")
-    if "Lower-than-expected approved units" in key_concerns:
-        recommended_actions.append("Study plan & workload review")
-    if not recommended_actions:
-        recommended_actions.append("Continue regular monitoring and support")
 
     # ---------------------- Charts ----------------------------
     col1, col2, col3 = st.columns(3)
@@ -725,11 +516,6 @@ elif page == "📈 Dashboard":
             "Semester": ["1st", "2nd"],
             "Grade": [input_data["Curricular_units_1st_sem_grade"][0], input_data["Curricular_units_2st_sem_grade"][0]]
         }).set_index("Semester"))
-        # contextual annotation for grades
-        if input_data["Curricular_units_2st_sem_grade"][0] < RECOMMENDED_AVG_GRADE:
-            st.markdown("⚠️ **Below recommended average (≥10/20)** — consider targeted tutoring for low second-semester grades.")
-        else:
-            st.markdown("✔️ **Average grade meets or exceeds the recommended benchmark (≥10/20).**")
     with col2:
         st.subheader("Curricular Progress")
         st.bar_chart(pd.DataFrame({
@@ -740,11 +526,6 @@ elif page == "📈 Dashboard":
                 input_data["Curricular_units_1st_sem_approved"][0]
             ]
         }).set_index("Status"))
-        # contextual annotation for academic load
-        if healthy_academic_load:
-            st.markdown("✔️ **Healthy academic load** — approved units meet expectations.")
-        else:
-            st.markdown(f"⚠️ **Below expected approved units** (approved {approved_total} vs expected {expected_approved_total}).")
     with col3:
         st.subheader("Tuition Status")
         if fees_status==1:
@@ -752,24 +533,11 @@ elif page == "📈 Dashboard":
         else:
             st.error("Fees NOT up-to-date ❌")
 
-    # ---------------------- Summary Insight Card --------------------
-    st.markdown("---")
-    st.markdown(
-        f"""
-        <div style="background: rgba(250,250,250,0.9); padding:20px; border-radius:12px; border-left:6px solid {status_color};">
-            <h3 style="margin:0;">**Overall Academic Status:** {overall_status}</h3>
-            <p style="margin:6px 0 0 0;"><strong>Key Concern:</strong> {key_concern_text}</p>
-            <p style="margin:6px 0 0 0;"><strong>Recommended Focus:</strong> {', '.join(recommended_actions)}</p>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
 # ------------------------------------------------------------
 # ---------------------- FEATURE IMPORTANCE -------------------
 # ------------------------------------------------------------
-elif page == "🔥 What Influenced This Result?":
-    st.title("🔥 What Influenced This Result?")
+elif page == "🔥 Feature Importance":
+    st.title("🔥 Model Feature Importance")
 
     if "input_data" not in st.session_state:
         st.warning("⚠ Please make a prediction first on the Home page.")
@@ -784,10 +552,8 @@ elif page == "🔥 What Influenced This Result?":
             "Importance": importances
         }).sort_values("Importance", ascending=True)  # ascending for horizontal bars
 
-        st.subheader("📌 Ranking of Factors")
-        with st.expander("ℹ️ What does this mean?"):
-            st.info(TOOLTIP_WHAT_INFLUENCED)
-        st.write("The chart below displays the contribution of each factor to the model's decision.")
+        st.subheader("📌 Ranked Feature Importance")
+        st.write("The chart below displays the contribution of each feature to the model's decision.")
 
         # ----- Nicely formatted horizontal bar chart -----
         fig, ax = plt.subplots(figsize=(8, 6))
@@ -800,20 +566,18 @@ elif page == "🔥 What Influenced This Result?":
         st.pyplot(fig)
 
         # ----- Display table too -----
-        st.subheader("📋 Ranking Table - What Influenced the Prediction")
+        st.subheader("📋 Feature Importance Table (Sorted)")
         st.dataframe(fi_df[::-1].reset_index(drop=True))  # highest first
 
     except Exception as e:
-        st.warning("⚠ Factor analysis is not available for this model.")
+        st.warning("⚠ Feature importance is not available for this model.")
         st.text(str(e))
 
 # ------------------------------------------------------------
 # ---------------------- SHAP EXPLAINABILITY -----------------
 # ------------------------------------------------------------
-elif page == "🔍 Detailed Explanation (Advanced)":
-    st.title("🔍 Detailed Explanation (Advanced)")
-    with st.expander("ℹ️ How do I read this?", expanded=False):
-        st.info(TOOLTIP_DETAILED_EXPLANATION)
+elif page == "🔍 SHAP Explainability":
+    st.title("🔍 SHAP Explainability")
     if "input_data" not in st.session_state:
         st.warning("⚠ Please make a prediction first on the Home page.")
         st.stop()
@@ -846,78 +610,6 @@ elif page == "📚 Admin / Lecturer Prompts":
     st.markdown(
         "Click a prompt below to send it to the Academic Assistant for professional insights and recommendations."
     )
-
-    # ------------------ Embedded Academic Assistant Chatbot ------------------
-    st.subheader("💬 Academic Assistant")
-    st.markdown("Use the assistant below for tailored advice. Quick prompts are provided for convenience.")
-    with st.expander("Open Academic Assistant", expanded=True):
-        if "chat_history" not in st.session_state:
-            st.session_state["chat_history"] = []
-
-        qp1, qp2, qp3 = st.columns([1,1,1])
-        quick_prompt = None
-        if qp1.button("Explain this prediction", key="admin_qp_explain"):
-            quick_prompt = "Explain this prediction for the current student profile."
-        if qp2.button("How can this student improve?", key="admin_qp_improve"):
-            quick_prompt = "How can this student improve their academic performance? Provide practical steps."
-        if qp3.button("What risks should I watch?", key="admin_qp_risks"):
-            quick_prompt = "What risks should instructors or advisors watch for with this student?"
-
-        user_input_chat = st.text_area("Message to assistant", key="admin_chat_input", height=80)
-        send = st.button("Send to Assistant", key="admin_send")
-        reset = st.button("Reset conversation", key="admin_reset")
-        if reset:
-            st.session_state["chat_history"] = []
-            st.success("Conversation reset.")
-
-        # Decide message to send
-        message_to_send = None
-        if quick_prompt:
-            message_to_send = quick_prompt
-        elif send and user_input_chat and user_input_chat.strip():
-            message_to_send = user_input_chat.strip()
-
-        if message_to_send:
-            st.session_state["chat_history"].append({"role":"user","text":message_to_send})
-            context = "You are a helpful academic assistant. Explain predictions, SHAP feature importance, and give advice based on student data."
-            used_student_data = False
-            if "input_data" in st.session_state:
-                used_student_data = True
-                try:
-                    context += f"\nStudent Data:\n{st.session_state['input_data'].to_dict(orient='records')[0]}"
-                except Exception:
-                    context += f"\nStudent Data:\n{str(st.session_state.get('input_data'))}"
-                if "prediction" in st.session_state and "probability" in st.session_state:
-                    context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence: {st.session_state['probability']:.2f}"
-            try:
-                openai.api_key = st.secrets["OPENAI_API_KEY"]
-                response = openai.chat.completions.create(
-                    model="gpt-4o-mini",
-                    messages=[
-                        {"role":"system","content":context},
-                        {"role":"user","content":message_to_send}
-                    ],
-                    temperature=1,
-                    max_completion_tokens=400
-                )
-                answer = response.choices[0].message.content
-                st.session_state["chat_history"].append({"role":"assistant","text":answer,"used_student_data":used_student_data})
-            except Exception as e:
-                err = f"⚠ Error contacting OpenAI API: {e}"
-                st.session_state["chat_history"].append({"role":"assistant","text":err,"used_student_data":used_student_data})
-
-        # Display chat history
-        if st.session_state["chat_history"]:
-            for entry in st.session_state["chat_history"]:
-                if entry.get("role") == "user":
-                    st.markdown(f"**You:** {entry.get('text')}")
-                else:
-                    st.markdown(f"**Assistant:** {entry.get('text')}")
-                    if entry.get("used_student_data"):
-                        st.caption("Based on student data")
-                    else:
-                        st.caption("Generic advice")
-
 
     prompts = [
         " Summarize this student's academic risk profile and propose possible interventions, support actions, or advising strategies an instructor or academic department could use to help the student succeed.",
@@ -1055,9 +747,9 @@ elif page == "ℹ️ About":
     
     - **🎯 Student Performance Prediction** – Predicts if a student will dropout, remain enrolled, or graduate
     - **📊 Dashboard Visualization** – Dynamic KPIs showing student metrics and progress
-    - **🔥 What Influenced This Result?** – See which factors most influenced this prediction
-    - **🔍 Detailed Explanation (Advanced)** – Deep dive into how each factor pushed the prediction higher or lower
-    - **📈 Prediction Results** – Clear visualization of prediction outcomes with certainty scores
+    - **🔥 Feature Importance** – Understand which factors influence predictions most
+    - **🔍 SHAP Explainability** – Detailed model interpretability with SHAP force plots
+    - **📈 Prediction Results** – Clear visualization of prediction outcomes with confidence scores
     - **📚 Admin/Lecturer Prompts** – Pre-built prompts for institutional staff to generate insights
     - **💬 OpenAI-Powered Chatbot** – Interactive academic assistant for real-time guidance
     - **⭐ User Reviews** – Community feedback and ratings
@@ -1078,27 +770,27 @@ elif page == "ℹ️ About":
        - 1st semester units enrolled, evaluated, approved, and grades
        - 2nd semester units enrolled, evaluated, approved, and grades
     4. Click **"🔍 Predict Performance"** button
-    5. View the prediction result and certainty score
+    5. View the prediction result and confidence score
     
     ### Step 2: 📊 Prediction Results
     - Review your prediction in a dedicated results page
     - See the predicted category (Dropout, Enrolled, or Graduate)
-    - Check the certainty score (0-1 scale)
+    - Check the confidence score (0-1 scale)
     
     ### Step 3: 📈 Dashboard
     - View comprehensive KPIs for the student
     - See semester grades, curricular progress, and tuition status
     - Visualize academic metrics in interactive charts
     
-    ### Step 4: 🔥 What Influenced This Result?
+    ### Step 4: 🔥 Feature Importance
     - Understand which features impact the prediction most
-    - View a ranked bar chart showing which factors influenced the decision
-    - Access detailed factor ranking in table format
+    - View a ranked bar chart of feature contributions
+    - Access detailed importance scores in table format
     
-    ### Step 5: 🔍 Detailed Explanation (Advanced)
-    - Get detailed explanation showing how each factor affected the decision
-    - See visual diagrams showing how each factor pushed the prediction
-    - Understand exactly why the model predicted this outcome
+    ### Step 5: 🔍 SHAP Explainability
+    - Get detailed model interpretation with SHAP values
+    - View force plots showing individual feature contributions
+    - Understand why the model made a specific prediction
     
     ### Step 6: 📚 Admin / Lecturer Prompts
     - Access pre-built prompts for institutional users
