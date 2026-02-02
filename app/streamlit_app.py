@@ -915,22 +915,34 @@ elif page == "🔍 Detailed Explanation (Advanced)":
 
             # Create a custom force plot alternative - show top positive and negative contributors
             try:
+                # Ensure we use plain numpy arrays to avoid multi-dimensional indexing errors
                 if shap_vals is None:
                     shap_arr = np.zeros(len(input_data.columns))
                 else:
                     shap_arr = np.asarray(shap_vals)
+
+                # Collapse to 2D or 1D numpy arrays explicitly
+                shap_arr = np.asarray(shap_arr)
+                if shap_arr.ndim == 3:
+                    # Some explainers can return shape (classes, samples, features) - pick predicted class or first
+                    shap_arr = shap_arr[0]
+
                 if shap_arr.ndim == 2:
                     base = np.abs(shap_arr).mean(axis=0)
-                    instance_vals = shap_arr[0]
+                    instance_vals = np.asarray(shap_arr[0])
                 else:
                     base = np.abs(shap_arr)
-                    instance_vals = shap_arr
+                    instance_vals = np.asarray(shap_arr)
+
+                # Ensure base and instance_vals are 1D numpy arrays
+                base = np.asarray(base).ravel()
+                instance_vals = np.asarray(instance_vals).ravel()
 
                 sorted_idx = np.argsort(base)[::-1][:10]
-                top_features = [input_data.columns[i] for i in sorted_idx]
+                top_features = [input_data.columns[int(i)] for i in sorted_idx]
                 top_values = instance_vals[sorted_idx]
 
-                colors = ['green' if v > 0 else 'red' for v in top_values]
+                colors = ['green' if float(v) > 0 else 'red' for v in top_values]
                 ax2.barh(range(len(top_features)), top_values, color=colors)
                 ax2.set_yticks(range(len(top_features)))
                 ax2.set_yticklabels(top_features)
