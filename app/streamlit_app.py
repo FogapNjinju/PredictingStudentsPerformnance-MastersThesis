@@ -878,37 +878,70 @@ elif page == "🔍 Detailed Explanation (Advanced)":
 
         st.subheader("Detailed SHAP Force Plot")
         try:
-            # Ensure we have numpy arrays
-            X_single = np.asarray(X_transformed[0:1])
-            shap_single = np.asarray(shap_vals[0:1]) if len(shap_vals.shape) > 1 else np.asarray(shap_vals).reshape(1, -1)
-            expected_scalar = float(expected_val) if hasattr(expected_val, '__iter__') is False else float(expected_val) if np.isscalar(expected_val) else float(np.asarray(expected_val).flatten()[0])
-            
-            force_html = shap.force_plot(expected_scalar, shap_single, X_single, feature_names=list(input_data.columns), matplotlib=False).html()
+            # Prepare single-instance arrays for force_plot
+            X_arr = np.asarray(X_transformed)
+
+            # Normalize shap_values structure to a numpy array for the target class
+            if isinstance(shap_values, list):
+                shap_list = [np.asarray(sv) for sv in shap_values]
+                class_idx = int(prediction) if int(prediction) < len(shap_list) else 0
+                shap_vals_class = shap_list[class_idx]
+                ev = explainer.expected_value
+                ev_arr = np.asarray(ev)
+                expected_scalar = float(ev_arr[class_idx]) if ev_arr.size > 1 else float(ev_arr.flatten()[0])
+            else:
+                shap_vals_class = np.asarray(shap_values)
+                ev = explainer.expected_value
+                try:
+                    expected_scalar = float(np.asarray(ev).flatten()[0])
+                except Exception:
+                    expected_scalar = float(ev)
+
+            # Ensure shap_vals_class is 2D: (n_samples, n_features)
+            if shap_vals_class.ndim == 1:
+                shap_vals_class = shap_vals_class.reshape(1, -1)
+
+            # Choose first instance (we only explain the predicted student)
+            shap_instance = shap_vals_class[0]
+            X_instance = X_arr[0] if X_arr.ndim > 1 else X_arr
+
+            # Force plot expects 1D shap array and 1D feature array for a single instance
+            force_html = shap.force_plot(expected_scalar, shap_instance, X_instance, feature_names=list(input_data.columns), matplotlib=False).html()
             st.components.v1.html(force_html, height=350)
         except Exception as force_error:
             st.warning("⚠ SHAP force plot is not available for this model type.")
             st.info("Showing feature contribution summary instead:")
             fig2, ax2 = plt.subplots(figsize=(10, 6))
-            
+
             # Create a custom force plot alternative - show top positive and negative contributors
-            if len(shap_vals.shape) > 1:
-                mean_shap = np.abs(shap_vals).mean(axis=0)
-            else:
-                mean_shap = np.abs(shap_vals)
-            
-            sorted_idx = np.argsort(mean_shap)[::-1][:10]
-            top_features = [input_data.columns[i] for i in sorted_idx]
-            top_values = shap_vals[0][sorted_idx] if len(shap_vals.shape) > 1 else shap_vals[sorted_idx]
-            
-            colors = ['green' if v > 0 else 'red' for v in top_values]
-            ax2.barh(range(len(top_features)), top_values, color=colors)
-            ax2.set_yticks(range(len(top_features)))
-            ax2.set_yticklabels(top_features)
-            ax2.set_xlabel("SHAP Value (Impact on Prediction)")
-            ax2.set_title("Top Feature Contributions (Alternative View)")
-            ax2.axvline(x=0, color='black', linestyle='-', linewidth=0.5)
-            plt.tight_layout()
-            st.pyplot(fig2)
+            try:
+                if shap_vals is None:
+                    shap_arr = np.zeros(len(input_data.columns))
+                else:
+                    shap_arr = np.asarray(shap_vals)
+                if shap_arr.ndim == 2:
+                    base = np.abs(shap_arr).mean(axis=0)
+                    instance_vals = shap_arr[0]
+                else:
+                    base = np.abs(shap_arr)
+                    instance_vals = shap_arr
+
+                sorted_idx = np.argsort(base)[::-1][:10]
+                top_features = [input_data.columns[i] for i in sorted_idx]
+                top_values = instance_vals[sorted_idx]
+
+                colors = ['green' if v > 0 else 'red' for v in top_values]
+                ax2.barh(range(len(top_features)), top_values, color=colors)
+                ax2.set_yticks(range(len(top_features)))
+                ax2.set_yticklabels(top_features)
+                ax2.set_xlabel("SHAP Value (Impact on Prediction)")
+                ax2.set_title("Top Feature Contributions (Alternative View)")
+                ax2.axvline(x=0, color='black', linestyle='-', linewidth=0.5)
+                plt.tight_layout()
+                st.pyplot(fig2)
+            except Exception as e_inner:
+                st.warning("⚠ Unable to render SHAP fallback visualization.")
+                st.text(str(e_inner))
             
     except Exception as e:
         st.warning(f"⚠ SHAP explanation is not available for the {selected_model_name} model.")
