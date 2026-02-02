@@ -444,19 +444,6 @@ if page == "🏠 Home (Prediction)":
     <hr style="border:1px solid #bbb;">
     """, unsafe_allow_html=True)
 
-    # ======= MODEL SELECTION =======
-    st.subheader("🤖 Model Selection")
-    col_model = st.columns(1)[0]
-    with col_model:
-        selected_model_name = st.selectbox(
-            "Choose a prediction model:",
-            options=list(AVAILABLE_MODELS.keys()),
-            index=0,  # Default to LightGBM
-            help="Select which ML model to use for predictions. LightGBM is recommended for best performance."
-        )
-    
-    st.markdown("---")
-
     st.header("📝 Student Information")
     with st.form("prediction_form"):
         # ===============================
@@ -521,7 +508,19 @@ if page == "🏠 Home (Prediction)":
 
             if Curricular_units_2st_sem_grade == 0 and Curricular_units_2nd_sem_approved > 0:
                 st.warning("⚠ Grade is 0 but units are approved. Please verify.")
-
+                
+        # ======= MODEL SELECTION =======
+        st.subheader("🤖 Model Selection")
+        col_model = st.columns(1)[0]
+        with col_model:
+            selected_model_name = st.selectbox(
+                "Choose a prediction model:",
+                options=list(AVAILABLE_MODELS.keys()),
+                index=0,  # Default to LightGBM
+                help="Select which ML model to use for predictions. LightGBM is recommended for best performance."
+            )
+        
+        st.markdown("---")
         submitted = st.form_submit_button("🔍 Predict Performance", use_container_width=True)
         if submitted:
             # Load the selected model
