@@ -847,6 +847,8 @@ elif page == "🔍 Detailed Explanation (Advanced)":
     st.info(f"📊 Showing SHAP explanation for: **{selected_model_name}** model")
     
     try:
+        import numpy as np
+        
         preprocessor = selected_model[:-1]
         final_model = selected_model[-1]
         X_transformed = preprocessor.transform(input_data)
@@ -876,19 +878,37 @@ elif page == "🔍 Detailed Explanation (Advanced)":
 
         st.subheader("Detailed SHAP Force Plot")
         try:
-            # Extract single instance values for force plot (remove batch dimension)
-            X_single = X_transformed[0:1] if len(X_transformed) > 1 else X_transformed
-            shap_single = shap_vals[0:1] if isinstance(shap_vals, (list, type(__import__('numpy').ndarray))) and len(shap_vals.shape) > 1 else shap_vals
+            # Ensure we have numpy arrays
+            X_single = np.asarray(X_transformed[0:1])
+            shap_single = np.asarray(shap_vals[0:1]) if len(shap_vals.shape) > 1 else np.asarray(shap_vals).reshape(1, -1)
+            expected_scalar = float(expected_val) if hasattr(expected_val, '__iter__') is False else float(expected_val) if np.isscalar(expected_val) else float(np.asarray(expected_val).flatten()[0])
             
-            force_html = shap.force_plot(expected_val, shap_single, X_single, feature_names=input_data.columns, matplotlib=False).html()
+            force_html = shap.force_plot(expected_scalar, shap_single, X_single, feature_names=list(input_data.columns), matplotlib=False).html()
             st.components.v1.html(force_html, height=350)
         except Exception as force_error:
-            st.warning("⚠ SHAP force plot is not available for this model.")
-            # Show summary plot as fallback
-            st.info("Showing feature importance summary instead:")
-            fig, ax = plt.subplots()
-            shap.summary_plot(shap_vals, X_transformed, feature_names=input_data.columns, show=False)
-            st.pyplot(fig)
+            st.warning("⚠ SHAP force plot is not available for this model type.")
+            st.info("Showing feature contribution summary instead:")
+            fig2, ax2 = plt.subplots(figsize=(10, 6))
+            
+            # Create a custom force plot alternative - show top positive and negative contributors
+            if len(shap_vals.shape) > 1:
+                mean_shap = np.abs(shap_vals).mean(axis=0)
+            else:
+                mean_shap = np.abs(shap_vals)
+            
+            sorted_idx = np.argsort(mean_shap)[::-1][:10]
+            top_features = [input_data.columns[i] for i in sorted_idx]
+            top_values = shap_vals[0][sorted_idx] if len(shap_vals.shape) > 1 else shap_vals[sorted_idx]
+            
+            colors = ['green' if v > 0 else 'red' for v in top_values]
+            ax2.barh(range(len(top_features)), top_values, color=colors)
+            ax2.set_yticks(range(len(top_features)))
+            ax2.set_yticklabels(top_features)
+            ax2.set_xlabel("SHAP Value (Impact on Prediction)")
+            ax2.set_title("Top Feature Contributions (Alternative View)")
+            ax2.axvline(x=0, color='black', linestyle='-', linewidth=0.5)
+            plt.tight_layout()
+            st.pyplot(fig2)
             
     except Exception as e:
         st.warning(f"⚠ SHAP explanation is not available for the {selected_model_name} model.")
