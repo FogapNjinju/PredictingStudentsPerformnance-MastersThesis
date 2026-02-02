@@ -909,7 +909,6 @@ elif page == "🔍 Detailed Explanation (Advanced)":
             force_html = shap.force_plot(expected_scalar, shap_instance, X_instance, feature_names=list(input_data.columns), matplotlib=False).html()
             st.components.v1.html(force_html, height=350)
         except Exception as force_error:
-            st.warning("⚠ SHAP force plot is not available for this model type.")
             st.info("Showing feature contribution summary instead:")
             fig2, ax2 = plt.subplots(figsize=(10, 6))
 
