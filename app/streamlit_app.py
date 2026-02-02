@@ -859,7 +859,7 @@ elif page == "🔍 Detailed Explanation (Advanced)":
             # Multi-output case (list of arrays for each class)
             if len(shap_values) > prediction:
                 shap_vals = shap_values[prediction]
-                expected_val = explainer.expected_value[prediction]
+                expected_val = explainer.expected_value[prediction] if isinstance(explainer.expected_value, list) else explainer.expected_value
             else:
                 # Fallback to first class if prediction index is out of bounds
                 shap_vals = shap_values[0]
@@ -875,8 +875,21 @@ elif page == "🔍 Detailed Explanation (Advanced)":
         st.pyplot(fig)
 
         st.subheader("Detailed SHAP Force Plot")
-        force_html = shap.force_plot(expected_val, shap_vals, X_transformed, feature_names=input_data.columns, matplotlib=False).html()
-        st.components.v1.html(force_html, height=350)
+        try:
+            # Extract single instance values for force plot (remove batch dimension)
+            X_single = X_transformed[0:1] if len(X_transformed) > 1 else X_transformed
+            shap_single = shap_vals[0:1] if isinstance(shap_vals, (list, type(__import__('numpy').ndarray))) and len(shap_vals.shape) > 1 else shap_vals
+            
+            force_html = shap.force_plot(expected_val, shap_single, X_single, feature_names=input_data.columns, matplotlib=False).html()
+            st.components.v1.html(force_html, height=350)
+        except Exception as force_error:
+            st.warning("⚠ SHAP force plot is not available for this model.")
+            # Show summary plot as fallback
+            st.info("Showing feature importance summary instead:")
+            fig, ax = plt.subplots()
+            shap.summary_plot(shap_vals, X_transformed, feature_names=input_data.columns, show=False)
+            st.pyplot(fig)
+            
     except Exception as e:
         st.warning(f"⚠ SHAP explanation is not available for the {selected_model_name} model.")
         st.text(f"Error details: {str(e)}")
