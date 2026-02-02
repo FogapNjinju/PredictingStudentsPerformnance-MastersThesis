@@ -508,7 +508,8 @@ if page == "🏠 Home (Prediction)":
 
             if Curricular_units_2st_sem_grade == 0 and Curricular_units_2nd_sem_approved > 0:
                 st.warning("⚠ Grade is 0 but units are approved. Please verify.")
-                
+
+        st.markdown("---")       
         # ======= MODEL SELECTION =======
         st.subheader("🤖 Model Selection")
         col_model = st.columns(1)[0]
@@ -589,6 +590,8 @@ if page == "🏠 Home (Prediction)":
                 st.markdown("---")
                 st.success(f"🎯 The student is predicted to **{prediction_label}** with a confidence of **{probability:.2f}**.")
                 st.session_state["input_data"] = input_data
+                st.session_state["selected_model"] = selected_model
+                st.session_state["selected_model_name"] = selected_model_name
             st.session_state["prediction"] = prediction
             st.session_state["probability"] = probability
 
@@ -835,9 +838,17 @@ elif page == "🔍 Detailed Explanation (Advanced)":
 
     input_data = st.session_state["input_data"]
     prediction = st.session_state.get("prediction", 0)
+    
+    # Get the selected model from session state, or use default model
+    selected_model = st.session_state.get("selected_model", model)
+    selected_model_name = st.session_state.get("selected_model_name", "Best Model")
+    
+    # Display which model is being explained
+    st.info(f"📊 Showing SHAP explanation for: **{selected_model_name}** model")
+    
     try:
-        preprocessor = model[:-1]
-        final_model = model[-1]
+        preprocessor = selected_model[:-1]
+        final_model = selected_model[-1]
         X_transformed = preprocessor.transform(input_data)
         explainer = shap.TreeExplainer(final_model)
         shap_values = explainer.shap_values(X_transformed)
@@ -850,8 +861,9 @@ elif page == "🔍 Detailed Explanation (Advanced)":
         st.subheader("Detailed SHAP Force Plot")
         force_html = shap.force_plot(explainer.expected_value[prediction], shap_values[prediction], X_transformed, feature_names=input_data.columns, matplotlib=False).html()
         st.components.v1.html(force_html, height=350)
-    except Exception:
-        st.warning("⚠ SHAP explanation is not available for this model.")
+    except Exception as e:
+        st.warning(f"⚠ SHAP explanation is not available for the {selected_model_name} model.")
+        st.text(str(e))
 
 # ------------------------------------------------------------
 # ------------------ ADMIN / LECTURER PROMPTS ----------------
