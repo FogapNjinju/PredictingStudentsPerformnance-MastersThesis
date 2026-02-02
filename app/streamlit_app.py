@@ -192,11 +192,35 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 MODEL_PATH = BASE_DIR / "outputs" / "models" / "best_model.joblib"
 PIPELINE_PATH = BASE_DIR / "outputs" / "models" / "best_pipeline.joblib"
 
+# Model names and their file paths
+AVAILABLE_MODELS = {
+    "LightGBM": "lightgbm_model.joblib",
+    "RandomForest": "randomforest_model.joblib",
+    "XGBoost": "xgboost_model.joblib",
+    "DecisionTree": "decisiontree_model.joblib",
+    "SVM": "svm_model.joblib"
+}
+
 @st.cache_resource
 def load_artifacts():
     model = joblib.load(MODEL_PATH)
     pipeline = joblib.load(PIPELINE_PATH)
     return model, pipeline
+
+def load_selected_model(model_name):
+    """Load a specific model by name"""
+    if model_name not in AVAILABLE_MODELS:
+        st.error(f"Model '{model_name}' not found.")
+        return None
+    
+    model_file = AVAILABLE_MODELS[model_name]
+    model_path = BASE_DIR / "outputs" / "models" / model_file
+    
+    if not model_path.exists():
+        st.error(f"Model file not found at {model_path}")
+        return None
+    
+    return joblib.load(model_path)
 
 model, pipeline = load_artifacts()
 
@@ -420,6 +444,19 @@ if page == "🏠 Home (Prediction)":
     <hr style="border:1px solid #bbb;">
     """, unsafe_allow_html=True)
 
+    # ======= MODEL SELECTION =======
+    st.subheader("🤖 Model Selection")
+    col_model = st.columns(1)[0]
+    with col_model:
+        selected_model_name = st.selectbox(
+            "Choose a prediction model:",
+            options=list(AVAILABLE_MODELS.keys()),
+            index=0,  # Default to LightGBM
+            help="Select which ML model to use for predictions. LightGBM is recommended for best performance."
+        )
+    
+    st.markdown("---")
+
     st.header("📝 Student Information")
     with st.form("prediction_form"):
         # ===============================
@@ -487,67 +524,72 @@ if page == "🏠 Home (Prediction)":
 
         submitted = st.form_submit_button("🔍 Predict Performance", use_container_width=True)
         if submitted:
-            input_data = pd.DataFrame([{
-                "Curricular_units_2nd_sem_approved": Curricular_units_2nd_sem_approved,
-                "Tuition_fees_up_to_date": Tuition_fees_up_to_date,
-                "Curricular_units_2st_sem_grade": Curricular_units_2st_sem_grade,
-                "Admission_grade": Admission_grade,
-                "Previous_qualification_grade": Previous_qualification_grade,
-                "Curricular_units_1st_sem_grade": Curricular_units_1st_sem_grade,
-                "Curricular_units_2nd_sem_enrolled": Curricular_units_2nd_sem_enrolled,
-                "Course": Course,
-                "Age_at_enrollment": Age_at_enrollment,
-                "Curricular_units_1st_sem_evaluations": Curricular_units_1st_sem_evaluations,
-                "Curricular_units_2nd_sem_evaluations": Curricular_units_2nd_sem_evaluations,
-                "Curricular_units_1st_sem_approved": Curricular_units_1st_sem_approved,
-                "Curricular_units_1st_sem_enrolled": Curricular_units_1st_sem_enrolled,
-                "Fathers_occupation": Fathers_occupation,
-                "Mothers_occupation": Mothers_occupation
-            }])
-            prediction = model.predict(input_data)[0]
-            probability = model.predict_proba(input_data).max()
-            label_map = {0: "Dropout 🚫🎓", 1: "Enrolled 📚🎓", 2: "Graduate 🎓✨"}
-            prediction_label = label_map.get(prediction, "Unknown")
-            st.markdown("---")
-            st.header("📊 Prediction Results")
-            with st.expander("ℹ️ What does this prediction mean?", expanded=False):
-                st.info(TOOLTIP_PREDICTION_RESULT)
-            colA, colB = st.columns(2)
-            with colA:
-                st.metric("Predicted Category", prediction_label)
-            with colB:
-                st.metric("Prediction Certainty", f"{probability:.2f}")
-
-            # ===== CONFIDENCE INTERPRETATION =====
-            confidence_info = get_confidence_interpretation(probability)
-            col_conf1, col_conf2 = st.columns([1, 2])
-            with col_conf1:
-                st.metric("Certainty Level", confidence_info["level"])
-            with col_conf2:
-                st.info(f"**{confidence_info['interpretation']}**")
-
-            st.markdown("---")
-
-            # ===== ACTIONABLE RECOMMENDATIONS =====
-            recommendations = get_actionable_recommendations(prediction_label, probability, input_data)
-
-            if recommendations["status_color"] == "error":
-                st.error(f"### {recommendations['status']}")
-            elif recommendations["status_color"] == "warning":
-                st.warning(f"### {recommendations['status']}")
+            # Load the selected model
+            selected_model = load_selected_model(selected_model_name)
+            if selected_model is None:
+                st.error("Failed to load the selected model. Please try again.")
             else:
-                st.success(f"### {recommendations['status']}")
+                input_data = pd.DataFrame([{
+                    "Curricular_units_2nd_sem_approved": Curricular_units_2nd_sem_approved,
+                    "Tuition_fees_up_to_date": Tuition_fees_up_to_date,
+                    "Curricular_units_2st_sem_grade": Curricular_units_2st_sem_grade,
+                    "Admission_grade": Admission_grade,
+                    "Previous_qualification_grade": Previous_qualification_grade,
+                    "Curricular_units_1st_sem_grade": Curricular_units_1st_sem_grade,
+                    "Curricular_units_2nd_sem_enrolled": Curricular_units_2nd_sem_enrolled,
+                    "Course": Course,
+                    "Age_at_enrollment": Age_at_enrollment,
+                    "Curricular_units_1st_sem_evaluations": Curricular_units_1st_sem_evaluations,
+                    "Curricular_units_2nd_sem_evaluations": Curricular_units_2nd_sem_evaluations,
+                    "Curricular_units_1st_sem_approved": Curricular_units_1st_sem_approved,
+                    "Curricular_units_1st_sem_enrolled": Curricular_units_1st_sem_enrolled,
+                    "Fathers_occupation": Fathers_occupation,
+                    "Mothers_occupation": Mothers_occupation
+                }])
+                prediction = selected_model.predict(input_data)[0]
+                probability = selected_model.predict_proba(input_data).max()
+                label_map = {0: "Dropout 🚫🎓", 1: "Enrolled 📚🎓", 2: "Graduate 🎓✨"}
+                prediction_label = label_map.get(prediction, "Unknown")
+                st.markdown("---")
+                st.header("📊 Prediction Results")
+                with st.expander("ℹ️ What does this prediction mean?", expanded=False):
+                    st.info(TOOLTIP_PREDICTION_RESULT)
+                colA, colB = st.columns(2)
+                with colA:
+                    st.metric("Predicted Category", prediction_label)
+                with colB:
+                    st.metric("Prediction Certainty", f"{probability:.2f}")
 
-            st.subheader(f"📋 {recommendations['title']}")
-            st.markdown(f"**Urgency Level:** {recommendations['urgency']} | **Timeline:** {recommendations['timeline']}")
+                # ===== CONFIDENCE INTERPRETATION =====
+                confidence_info = get_confidence_interpretation(probability)
+                col_conf1, col_conf2 = st.columns([1, 2])
+                with col_conf1:
+                    st.metric("Certainty Level", confidence_info["level"])
+                with col_conf2:
+                    st.info(f"**{confidence_info['interpretation']}**")
 
-            st.markdown("### ✅ Recommended Actions:")
-            for i, action in enumerate(recommendations["actions"], 1):
-                st.markdown(f"{i}. {action}")
+                st.markdown("---")
 
-            st.markdown("---")
-            st.success(f"🎯 The student is predicted to **{prediction_label}** with a confidence of **{probability:.2f}**.")
-            st.session_state["input_data"] = input_data
+                # ===== ACTIONABLE RECOMMENDATIONS =====
+                recommendations = get_actionable_recommendations(prediction_label, probability, input_data)
+
+                if recommendations["status_color"] == "error":
+                    st.error(f"### {recommendations['status']}")
+                elif recommendations["status_color"] == "warning":
+                    st.warning(f"### {recommendations['status']}")
+                else:
+                    st.success(f"### {recommendations['status']}")
+
+                st.subheader(f"📋 {recommendations['title']}")
+                st.markdown(f"**Urgency Level:** {recommendations['urgency']} | **Timeline:** {recommendations['timeline']}")
+
+                st.markdown("### ✅ Recommended Actions:")
+                for i, action in enumerate(recommendations["actions"], 1):
+                    st.markdown(f"{i}. {action}")
+
+                st.markdown("---")
+                st.success(f"🎯 The student is predicted to **{prediction_label}** with a confidence of **{probability:.2f}**.")
+                st.session_state["input_data"] = input_data
             st.session_state["prediction"] = prediction
             st.session_state["probability"] = probability
 
