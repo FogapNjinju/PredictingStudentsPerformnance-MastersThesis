@@ -1174,8 +1174,8 @@ This web application predicts student academic performance using machine learnin
 
 - **🎯 Student Performance Prediction** – Predicts if a student will dropout, remain enrolled, or graduate
 - **📊 Dashboard Visualization** – Dynamic KPIs showing student metrics and progress
-- **🔥 What Influenced This Result?** – See which factors most influenced this prediction
-- **🔍 Detailed Explanation (Advanced)** – Deep dive into how each factor pushed the prediction higher or lower
+- **🔥 What Influenced This Result (Feature Importance)?** – See which factors most influenced this prediction
+- **🔍 Detailed Explanation (SHAP)** – Deep dive into how each factor pushed the prediction higher or lower
 - **📈 Prediction Results** – Clear visualization of prediction outcomes with certainty scores
 - **📚 Admin/Lecturer Prompts** – Pre-built prompts for institutional staff to generate insights
 - **💬 OpenAI-Powered Chatbot** – Interactive academic assistant for real-time guidance
