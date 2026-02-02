@@ -443,7 +443,7 @@ if page == "🏠 Home (Prediction)":
                 course_label = st.selectbox("Course", COURSE_MAP.keys(), help=help_course)
                 Course = COURSE_MAP[course_label]
                 Admission_grade = st.number_input("Admission Grade", 0.0, 200.0, help=help_admission_grade)
-                Previous_qualification_grade = st.number_input("Previous Qualification Grade", 0.0, 300.0, help=help_prevqual)
+                Previous_qualification_grade = st.number_input("Previous Qualification Grade", 0.0, 200.0, help=help_prevqual)
 
         # ===============================
         # STEP 2: SEMESTER 1
@@ -452,11 +452,11 @@ if page == "🏠 Home (Prediction)":
             col4, col5 = st.columns(2)
 
             with col4:
-                Curricular_units_1st_sem_enrolled = st.number_input("Units Enrolled", 0, 40, help=help_units_enrolled_1)
-                Curricular_units_1st_sem_evaluations = st.number_input("Evaluations", 0, 100, help=help_units_eval_1)
+                Curricular_units_1st_sem_enrolled = st.number_input("Units Enrolled", 0, 20, help=help_units_enrolled_1)
+                Curricular_units_1st_sem_evaluations = st.number_input("Evaluations", 0, 20, help=help_units_eval_1)
 
             with col5:
-                Curricular_units_1st_sem_approved = st.number_input("Units Approved", 0, 40, help=help_units_approved_1)
+                Curricular_units_1st_sem_approved = st.number_input("Units Approved", 0, 20, help=help_units_approved_1)
                 Curricular_units_1st_sem_grade = st.number_input("Average Grade", 0.0, 20.0, help=help_units_grade_1)
 
             if Curricular_units_1st_sem_approved > Curricular_units_1st_sem_enrolled:
@@ -472,11 +472,11 @@ if page == "🏠 Home (Prediction)":
             col6, col7 = st.columns(2)
 
             with col6:
-                Curricular_units_2nd_sem_enrolled = st.number_input("Units Enrolled ", 0, 40, help=help_units_enrolled_2)
-                Curricular_units_2nd_sem_evaluations = st.number_input("Evaluations ", 0, 100, help=help_units_eval_2)
+                Curricular_units_2nd_sem_enrolled = st.number_input("Units Enrolled ", 0, 20, help=help_units_enrolled_2)
+                Curricular_units_2nd_sem_evaluations = st.number_input("Evaluations ", 0, 20, help=help_units_eval_2)
 
             with col7:
-                Curricular_units_2nd_sem_approved = st.number_input("Units Approved ", 0, 40, help=help_units_approved_2)
+                Curricular_units_2nd_sem_approved = st.number_input("Units Approved ", 0, 20, help=help_units_approved_2)
                 Curricular_units_2st_sem_grade = st.number_input("Average Grade ", 0.0, 20.0, help=help_units_grade_2)
 
             if Curricular_units_2nd_sem_approved > Curricular_units_2nd_sem_enrolled:
