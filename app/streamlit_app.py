@@ -853,17 +853,33 @@ elif page == "🔍 Detailed Explanation (Advanced)":
         explainer = shap.TreeExplainer(final_model)
         shap_values = explainer.shap_values(X_transformed)
 
+        # Handle different SHAP value structures
+        # Some models return a list of arrays (one per class), others return a single array
+        if isinstance(shap_values, list):
+            # Multi-output case (list of arrays for each class)
+            if len(shap_values) > prediction:
+                shap_vals = shap_values[prediction]
+                expected_val = explainer.expected_value[prediction]
+            else:
+                # Fallback to first class if prediction index is out of bounds
+                shap_vals = shap_values[0]
+                expected_val = explainer.expected_value[0] if isinstance(explainer.expected_value, list) else explainer.expected_value
+        else:
+            # Single array case
+            shap_vals = shap_values
+            expected_val = explainer.expected_value if not isinstance(explainer.expected_value, list) else explainer.expected_value[0]
+
         st.subheader("Top Feature Contributions")
         fig, ax = plt.subplots()
-        shap.summary_plot(shap_values[prediction], X_transformed, feature_names=input_data.columns, plot_type="bar", show=False)
+        shap.summary_plot(shap_vals, X_transformed, feature_names=input_data.columns, plot_type="bar", show=False)
         st.pyplot(fig)
 
         st.subheader("Detailed SHAP Force Plot")
-        force_html = shap.force_plot(explainer.expected_value[prediction], shap_values[prediction], X_transformed, feature_names=input_data.columns, matplotlib=False).html()
+        force_html = shap.force_plot(expected_val, shap_vals, X_transformed, feature_names=input_data.columns, matplotlib=False).html()
         st.components.v1.html(force_html, height=350)
     except Exception as e:
         st.warning(f"⚠ SHAP explanation is not available for the {selected_model_name} model.")
-        st.text(str(e))
+        st.text(f"Error details: {str(e)}")
 
 # ------------------------------------------------------------
 # ------------------ ADMIN / LECTURER PROMPTS ----------------
