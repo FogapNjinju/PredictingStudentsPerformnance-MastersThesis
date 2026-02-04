@@ -517,8 +517,8 @@ if page == "🏠 Home (Prediction)":
             selected_model_name = st.selectbox(
                 "Choose a prediction model:",
                 options=list(AVAILABLE_MODELS.keys()),
-                index=0,  # Default to LightGBM
-                help="Select which ML model to use for predictions. LightGBM is recommended for best performance."
+                index=2,  # Default to XGBoost
+                help="Select which ML model to use for predictions. XGBoost is recommended for best performance."
             )
         
         st.markdown("---")
