@@ -795,11 +795,15 @@ elif page == "🔥 What Influenced This Result?":
 
     try:
         selected_model = st.session_state.get("selected_model", model)
+        preprocessor = selected_model[:-1]
         final_model = selected_model[-1]
         importances = final_model.feature_importances_
+        
+        # Get transformed feature names from preprocessor
+        feature_names = preprocessor.get_feature_names_out()
 
         fi_df = pd.DataFrame({
-            "Feature": st.session_state["input_data"].columns,
+            "Feature": feature_names,
             "Importance": importances
         }).sort_values("Importance", ascending=True) # ascending for horizontal bars
 
@@ -874,7 +878,9 @@ elif page == "🔍 Detailed Explanation (Advanced)":
 
         st.subheader("Top Feature Contributions")
         fig, ax = plt.subplots()
-        shap.summary_plot(shap_vals, X_transformed, feature_names=input_data.columns, plot_type="bar", show=False)
+        # Get transformed feature names from preprocessor
+        feature_names_transformed = preprocessor.get_feature_names_out()
+        shap.summary_plot(shap_vals, X_transformed, feature_names=feature_names_transformed, plot_type="bar", show=False)
         st.pyplot(fig)
 
         st.subheader("Detailed SHAP Force Plot")
@@ -907,7 +913,8 @@ elif page == "🔍 Detailed Explanation (Advanced)":
             X_instance = X_arr[0] if X_arr.ndim > 1 else X_arr
 
             # Force plot expects 1D shap array and 1D feature array for a single instance
-            force_html = shap.force_plot(expected_scalar, shap_instance, X_instance, feature_names=list(input_data.columns), matplotlib=False).html()
+            feature_names_transformed = preprocessor.get_feature_names_out()
+            force_html = shap.force_plot(expected_scalar, shap_instance, X_instance, feature_names=list(feature_names_transformed), matplotlib=False).html()
             st.components.v1.html(force_html, height=350)
         except Exception as force_error:
             st.info("Showing feature contribution summary instead:")
@@ -939,7 +946,8 @@ elif page == "🔍 Detailed Explanation (Advanced)":
                 instance_vals = np.asarray(instance_vals).ravel()
 
                 sorted_idx = np.argsort(base)[::-1][:10]
-                top_features = [input_data.columns[int(i)] for i in sorted_idx]
+                feature_names_transformed = preprocessor.get_feature_names_out()
+                top_features = [feature_names_transformed[int(i)] for i in sorted_idx]
                 top_values = instance_vals[sorted_idx]
 
                 colors = ['green' if float(v) > 0 else 'red' for v in top_values]
