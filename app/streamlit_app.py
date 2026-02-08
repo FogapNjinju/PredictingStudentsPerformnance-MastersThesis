@@ -794,7 +794,8 @@ elif page == "🔥 What Influenced This Result?":
         st.stop()
 
     try:
-        final_model = model[-1]
+        selected_model = st.session_state.get("selected_model", model)
+        final_model = selected_model[-1]
         importances = final_model.feature_importances_
 
         fi_df = pd.DataFrame({
