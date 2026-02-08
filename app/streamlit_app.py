@@ -225,31 +225,55 @@ def load_selected_model(model_name):
 model, pipeline = load_artifacts()
 
 # ============================================================
-# Helper Functions for Actionable Recommendations
+# Confidence Calculation Helper
 # ============================================================
 
-def get_confidence_interpretation(confidence):
-    """Interpret confidence score and return color + interpretation"""
-    if confidence >= 0.90:
+def calculate_prediction_confidence(model, input_data):
+    """
+    Calculate prediction with margin-based confidence.
+    
+    Confidence is based on the margin between top 2 class probabilities.
+    High margin = model is certain (classes well separated)
+    Low margin = model is uncertain (classes too close)
+    
+    Returns:
+        prediction: predicted class index
+        max_prob: highest probability
+        margin: difference between top 2 probabilities (true confidence)
+    """
+    probs = model.predict_proba(input_data)[0]
+    sorted_probs = sorted(probs, reverse=True)
+    
+    prediction = model.predict(input_data)[0]
+    max_prob = probs.max()
+    
+    # Margin between top 2 probabilities is the TRUE confidence metric
+    margin = sorted_probs[0] - sorted_probs[1]
+    
+    return prediction, max_prob, margin
+
+def get_confidence_interpretation(margin):
+    """Interpret confidence margin and return color + interpretation"""
+    if margin >= 0.20:
         return {
             "level": "🟢 Very High Confidence",
-            "description": "The model is very confident in this prediction.",
+            "description": "Clear separation between top classes.",
             "color": "green",
-            "interpretation": "High model confidence, but verify with additional assessment methods before making critical decisions."
+            "interpretation": "Classes are well-separated. High model confidence, but verify with additional assessment methods before making critical decisions."
         }
-    elif confidence >= 0.70:
+    elif margin >= 0.10:
         return {
             "level": "🟡 Moderate Confidence",
-            "description": "The model has reasonable confidence in this prediction.",
+            "description": "Reasonable separation between top classes.",
             "color": "orange",
-            "interpretation": "Moderate model confidence. Consider this score alongside other evaluation methods and institutional knowledge."
+            "interpretation": "Moderate class separation. Consider this score alongside other evaluation methods and institutional knowledge."
         }
     else:
         return {
             "level": "🔴 Low Confidence",
-            "description": "The model's confidence is below typical thresholds.",
+            "description": "Top classes are very close.",
             "color": "red",
-            "interpretation": "Low model confidence. Strongly recommend additional assessment methods and manual review before making decisions."
+            "interpretation": "Low confidence - classes are too similar. Strongly recommend additional assessment methods and manual review before making decisions."
         }
 
 def get_actionable_recommendations(prediction_label, confidence, input_data):
@@ -320,18 +344,27 @@ def get_actionable_recommendations(prediction_label, confidence, input_data):
 TOOLTIP_PREDICTION_CERTAINTY = """
 **Model Confidence Score** (0.0 - 1.0):
 
-This score represents the model's confidence in its prediction, extracted from the raw probabilities.
+This score is based on the **margin between the top 2 class probabilities**.
+
+✅ **Why this is better:**
+- Accounts for class separation, not just max probability
+- High margin = classes well-separated = stable prediction
+- Low margin = classes too similar = uncertain prediction
+
+**Example:**
+- Classes: [0.41, 0.39, 0.20] → Margin = 0.41 - 0.39 = 0.02 (LOW confidence)
+- Classes: [0.75, 0.15, 0.10] → Margin = 0.75 - 0.15 = 0.60 (HIGH confidence)
 
 ⚠️ **Important Note:**
 - This is **NOT** a calibrated probability (models vary in calibration)
 - Different models may produce different confidence scores for the same input
-- SVM and RandomForest models often have uncalibrated probabilities
-- Use this score as a **relative measure of model confidence**, not as a true probability
+- SVM and RandomForest models often have poorly-calibrated probabilities
+- Use this score as a **relative measure of model certainty**, not as a true probability
 
 **Interpretation:**
-* **0.9+** = Very high model confidence (verify with other methods before acting)
-* **0.7-0.89** = Moderate model confidence (consider alongside other factors)
-* **Below 0.7** = Lower model confidence (strongly recommend additional assessment)
+* **≥0.20** = Very high model confidence (classes well-separated)
+* **0.10-0.20** = Moderate model confidence (reasonable separation)
+* **<0.10** = Lower model confidence (classes too similar - unreliable)
 
 **Best Practice:** Always combine this score with manual review, institutional knowledge, and other assessment methods.
 """
@@ -557,8 +590,7 @@ if page == "🏠 Home (Prediction)":
                     "Fathers_occupation": Fathers_occupation,
                     "Mothers_occupation": Mothers_occupation
                 }])
-                prediction = selected_model.predict(input_data)[0]
-                probability = selected_model.predict_proba(input_data).max()
+                prediction, max_prob, margin = calculate_prediction_confidence(selected_model, input_data)
                 label_map = {0: "Dropout 🚫🎓", 1: "Enrolled 📚🎓", 2: "Graduate 🎓✨"}
                 prediction_label = label_map.get(prediction, "Unknown")
                 st.markdown("---")
@@ -569,10 +601,10 @@ if page == "🏠 Home (Prediction)":
                 with colA:
                     st.metric("Predicted Category", prediction_label)
                 with colB:
-                    st.metric("Model Confidence Score", f"{probability:.2f}")
+                    st.metric("Confidence Margin", f"{margin:.3f}")
 
                 # ===== CONFIDENCE INTERPRETATION =====
-                confidence_info = get_confidence_interpretation(probability)
+                confidence_info = get_confidence_interpretation(margin)
                 col_conf1, col_conf2 = st.columns([1, 2])
                 with col_conf1:
                     st.metric("Certainty Level", confidence_info["level"])
@@ -582,7 +614,7 @@ if page == "🏠 Home (Prediction)":
                 st.markdown("---")
 
                 # ===== ACTIONABLE RECOMMENDATIONS =====
-                recommendations = get_actionable_recommendations(prediction_label, probability, input_data)
+                recommendations = get_actionable_recommendations(prediction_label, margin, input_data)
 
                 if recommendations["status_color"] == "error":
                     st.error(f"### {recommendations['status']}")
@@ -599,12 +631,13 @@ if page == "🏠 Home (Prediction)":
                     st.markdown(f"{i}. {action}")
 
                 st.markdown("---")
-                st.success(f"🎯 The student is predicted to **{prediction_label}** with a confidence of **{probability:.2f}**.")
+                st.success(f"🎯 The student is predicted to **{prediction_label}** with confidence margin of **{margin:.3f}**.")
                 st.session_state["input_data"] = input_data
                 st.session_state["selected_model"] = selected_model
                 st.session_state["selected_model_name"] = selected_model_name
             st.session_state["prediction"] = prediction
-            st.session_state["probability"] = probability
+            st.session_state["margin"] = margin
+            st.session_state["max_prob"] = max_prob
 
 # ------------------------------------------------------------
 # ------------------ 📊 PREDICTION RESULTS TAB ---------------
@@ -630,13 +663,13 @@ are provided in the corresponding tabs.
 """)
 
     # Check if prediction exists
-    if "prediction" not in st.session_state or "probability" not in st.session_state:
+    if "prediction" not in st.session_state or "margin" not in st.session_state:
         st.warning("⚠ No prediction available yet. Please enter inputs in the prediction page.")
     else:
         # Map numeric prediction to category label
         label_map = {0: "Dropout 🚫🎓", 1: "Enrolled 📚🎓", 2: "Graduate 🎓✨"}
         prediction = label_map.get(st.session_state["prediction"], "Unknown")
-        confidence = st.session_state["probability"]
+        margin = st.session_state["margin"]
 
         # Display metrics in columns
         col1, col2 = st.columns(2)
@@ -649,8 +682,8 @@ are provided in the corresponding tabs.
 
         with col2:
             st.metric(
-                label="📈 Confidence Score",
-                value=f"{confidence:.2f}"
+                label="📈 Confidence Margin",
+                value=f"{margin:.3f}"
             )
 
         # Nice result card
@@ -665,8 +698,8 @@ are provided in the corresponding tabs.
 ">
     <h3 style="margin-bottom: 10px;">🎯 Final Prediction Summary</h3>
     <p style="font-size: 18px;">
-    The student is predicted to <b>{prediction}</b> with a confidence score of
-    <b>{confidence:.2f}</b>.
+    The student is predicted to <b>{prediction}</b> with a confidence margin of
+    <b>{margin:.3f}</b>.
     </p>
 </div>
 """,
@@ -690,7 +723,7 @@ elif page == "📈 Dashboard":
     avg_grade = (input_data["Curricular_units_1st_sem_grade"][0] + input_data["Curricular_units_2st_sem_grade"][0]) / 2
     fees_status = input_data["Tuition_fees_up_to_date"][0]
     prediction_raw = st.session_state.get("prediction", "Unknown")
-    probability = st.session_state.get("probability", 0)
+    margin = st.session_state.get("margin", 0)
     # Map numeric prediction to a readable label for display and logic
     label_map_short = {0: "Dropout", 1: "Enrolled", 2: "Graduate"}
     try:
@@ -1027,8 +1060,8 @@ elif page == "📚 Admin / Lecturer Prompts":
                     context += f"\nStudent Data:\n{st.session_state['input_data'].to_dict(orient='records')[0]}"
                 except Exception:
                     context += f"\nStudent Data:\n{str(st.session_state.get('input_data'))}"
-            if "prediction" in st.session_state and "probability" in st.session_state:
-                context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence: {st.session_state['probability']:.2f}"
+            if "prediction" in st.session_state and "margin" in st.session_state:
+                context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence Margin: {st.session_state['margin']:.3f}"
             try:
                 openai.api_key = st.secrets["OPENAI_API_KEY"]
                 response = openai.chat.completions.create(
@@ -1084,8 +1117,8 @@ elif page == "📚 Admin / Lecturer Prompts":
                 context = "You are a helpful academic assistant. Explain predictions, SHAP feature importance, and give advice based on student data."
                 if "input_data" in st.session_state:
                     context += f"\nStudent Data:\n{st.session_state['input_data'].to_dict(orient='records')[0]}"
-                if "prediction" in st.session_state and "probability" in st.session_state:
-                    context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence: {st.session_state['probability']:.2f}"
+                if "prediction" in st.session_state and "margin" in st.session_state:
+                    context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence Margin: {st.session_state['margin']:.3f}"
                 try:
                     openai.api_key = st.secrets["OPENAI_API_KEY"]
                     response = openai.chat.completions.create(
