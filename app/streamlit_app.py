@@ -232,24 +232,24 @@ def get_confidence_interpretation(confidence):
     """Interpret confidence score and return color + interpretation"""
     if confidence >= 0.90:
         return {
-            "level": "🟢 Very High Certainty",
+            "level": "🟢 Very High Confidence",
             "description": "The model is very confident in this prediction.",
             "color": "green",
-            "interpretation": "Use this prediction with high confidence for decision-making."
+            "interpretation": "High model confidence, but verify with additional assessment methods before making critical decisions."
         }
     elif confidence >= 0.70:
         return {
             "level": "🟡 Moderate Confidence",
             "description": "The model has reasonable confidence in this prediction.",
             "color": "orange",
-            "interpretation": "This prediction is reliable but should be considered alongside other factors."
+            "interpretation": "Moderate model confidence. Consider this score alongside other evaluation methods and institutional knowledge."
         }
     else:
         return {
-            "level": "🔴 Use with Caution",
+            "level": "🔴 Low Confidence",
             "description": "The model's confidence is below typical thresholds.",
             "color": "red",
-            "interpretation": "This prediction is uncertain. Verify with additional assessment methods."
+            "interpretation": "Low model confidence. Strongly recommend additional assessment methods and manual review before making decisions."
         }
 
 def get_actionable_recommendations(prediction_label, confidence, input_data):
@@ -318,11 +318,22 @@ def get_actionable_recommendations(prediction_label, confidence, input_data):
 # ============================================================
 
 TOOLTIP_PREDICTION_CERTAINTY = """
-**Prediction Certainty** (0.0 - 1.0):
+**Model Confidence Score** (0.0 - 1.0):
 
-* **0.9+** = The model is very sure about this prediction
-* **0.7-0.89** = The model is reasonably confident
-* **Below 0.7** = The prediction is uncertain; verify with other methods
+This score represents the model's confidence in its prediction, extracted from the raw probabilities.
+
+⚠️ **Important Note:**
+- This is **NOT** a calibrated probability (models vary in calibration)
+- Different models may produce different confidence scores for the same input
+- SVM and RandomForest models often have uncalibrated probabilities
+- Use this score as a **relative measure of model confidence**, not as a true probability
+
+**Interpretation:**
+* **0.9+** = Very high model confidence (verify with other methods before acting)
+* **0.7-0.89** = Moderate model confidence (consider alongside other factors)
+* **Below 0.7** = Lower model confidence (strongly recommend additional assessment)
+
+**Best Practice:** Always combine this score with manual review, institutional knowledge, and other assessment methods.
 """
 
 TOOLTIP_WHAT_INFLUENCED = """
@@ -558,7 +569,7 @@ if page == "🏠 Home (Prediction)":
                 with colA:
                     st.metric("Predicted Category", prediction_label)
                 with colB:
-                    st.metric("Prediction Certainty", f"{probability:.2f}")
+                    st.metric("Model Confidence Score", f"{probability:.2f}")
 
                 # ===== CONFIDENCE INTERPRETATION =====
                 confidence_info = get_confidence_interpretation(probability)
