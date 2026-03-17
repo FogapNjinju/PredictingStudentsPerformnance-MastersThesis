@@ -7,6 +7,7 @@ from pathlib import Path
 import openai
 import json
 from datetime import datetime
+import os
 
 # ------------------------------------------------------------
 # Helper Functions for Reviews
@@ -1063,7 +1064,7 @@ elif page == "📚 Admin / Lecturer Prompts":
             if "prediction" in st.session_state and "margin" in st.session_state:
                 context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence Margin: {st.session_state['margin']:.3f}"
             try:
-                openai.api_key = st.secrets["OPENAI_API_KEY"]
+                openai.api_key = os.environ.get("OPENAI_API_KEY") or st.secrets["OPENAI_API_KEY"]
                 response = openai.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[
@@ -1120,7 +1121,7 @@ elif page == "📚 Admin / Lecturer Prompts":
                 if "prediction" in st.session_state and "margin" in st.session_state:
                     context += f"\nPredicted Category: {st.session_state['prediction']}, Confidence Margin: {st.session_state['margin']:.3f}"
                 try:
-                    openai.api_key = st.secrets["OPENAI_API_KEY"]
+                    openai.api_key = os.environ.get("OPENAI_API_KEY") or st.secrets["OPENAI_API_KEY"]
                     response = openai.chat.completions.create(
                         model="gpt-4o-mini",
                         messages=[

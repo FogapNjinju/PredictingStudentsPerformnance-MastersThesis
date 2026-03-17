@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  student-predictor:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      # Optional: Mount local data if you want to update models/data without rebuilding
+      - ./data:/app/data
+      - ./outputs:/app/outputs
