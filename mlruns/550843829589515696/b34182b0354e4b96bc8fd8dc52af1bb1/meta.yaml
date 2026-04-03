@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/User/Desktop/PredictingStudentsPerformnance-MastersThesis/mlruns/550843829589515696/b34182b0354e4b96bc8fd8dc52af1bb1/artifacts
+end_time: 1775219879506
+entry_point_name: ''
+experiment_id: '550843829589515696'
+lifecycle_stage: active
+run_id: b34182b0354e4b96bc8fd8dc52af1bb1
+run_name: xgboost_classifier
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1775219865756
+status: 3
+tags: []
+user_id: User

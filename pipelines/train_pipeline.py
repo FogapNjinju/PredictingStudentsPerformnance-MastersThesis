@@ -10,6 +10,8 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import xgboost as xgb
+import lightgbm as lgb
 
 # Add src to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -116,16 +118,99 @@ class TrainingPipeline:
             logger.info(f"Random Forest Metrics: {metrics_rf}")
             mlflow_logger.end_run()
             
+            # Train XGBoost Classifier
+            mlflow_logger.start_run(
+                run_name="xgboost_classifier",
+                tags={"model_type": "XGBoostClassifier", "pipeline": "main"}
+            )
+            
+            xgb_model = Pipeline([
+                ('scaler', StandardScaler()),
+                ('model', xgb.XGBClassifier(
+                    n_estimators=self.config['model']['models_to_train'][1]['params']['n_estimators'],
+                    max_depth=self.config['model']['models_to_train'][1]['params']['max_depth'],
+                    learning_rate=self.config['model']['models_to_train'][1]['params']['learning_rate'],
+                    random_state=42,
+                    verbosity=0,
+                    use_label_encoder=False,
+                    eval_metric='mlogloss'
+                ))
+            ])
+            
+            xgb_model.fit(X_train, y_train)
+            y_pred_xgb = xgb_model.predict(X_test)
+            
+            metrics_xgb = {
+                "accuracy": accuracy_score(y_test, y_pred_xgb),
+                "precision": precision_score(y_test, y_pred_xgb, zero_division=0, average='weighted'),
+                "recall": recall_score(y_test, y_pred_xgb, zero_division=0, average='weighted'),
+                "f1_score": f1_score(y_test, y_pred_xgb, zero_division=0, average='weighted')
+            }
+            
+            mlflow_logger.log_params(self.config['model']['models_to_train'][1]['params'])
+            mlflow_logger.log_metrics(metrics_xgb)
+            mlflow.sklearn.log_model(xgb_model, "model")
+            model_results['xgboost'] = metrics_xgb
+            
+            logger.info(f"XGBoost Metrics: {metrics_xgb}")
+            mlflow_logger.end_run()
+            
+            # Train LightGBM Classifier
+            mlflow_logger.start_run(
+                run_name="lightgbm_classifier",
+                tags={"model_type": "LightGBMClassifier", "pipeline": "main"}
+            )
+            
+            lgb_model = Pipeline([
+                ('scaler', StandardScaler()),
+                ('model', lgb.LGBMClassifier(
+                    n_estimators=self.config['model']['models_to_train'][2]['params']['n_estimators'],
+                    max_depth=self.config['model']['models_to_train'][2]['params']['max_depth'],
+                    learning_rate=self.config['model']['models_to_train'][2]['params']['learning_rate'],
+                    random_state=42,
+                    verbose=-1
+                ))
+            ])
+            
+            lgb_model.fit(X_train, y_train)
+            y_pred_lgb = lgb_model.predict(X_test)
+            
+            metrics_lgb = {
+                "accuracy": accuracy_score(y_test, y_pred_lgb),
+                "precision": precision_score(y_test, y_pred_lgb, zero_division=0, average='weighted'),
+                "recall": recall_score(y_test, y_pred_lgb, zero_division=0, average='weighted'),
+                "f1_score": f1_score(y_test, y_pred_lgb, zero_division=0, average='weighted')
+            }
+            
+            mlflow_logger.log_params(self.config['model']['models_to_train'][2]['params'])
+            mlflow_logger.log_metrics(metrics_lgb)
+            mlflow.sklearn.log_model(lgb_model, "model")
+            model_results['lightgbm'] = metrics_lgb
+            
+            logger.info(f"LightGBM Metrics: {metrics_lgb}")
+            mlflow_logger.end_run()
+            
             # Step 5: Select and save best model
             logger.info("Step 4: Selecting best model")
             best_model_name = self._compare_models(model_results)
-            best_model = rf_model
+            
+            # Get the best model
+            if best_model_name == 'random_forest':
+                best_model = rf_model
+            elif best_model_name == 'xgboost':
+                best_model = xgb_model
+            else:
+                best_model = lgb_model
             
             # Save best model
             output_path = self.config['paths']['models_dir']
             ModelManager.save_model(best_model, f"{output_path}/best_model.joblib")
             
             logger.info("Training pipeline completed successfully!")
+            logger.info(f"All models trained: RF={model_results['random_forest']['f1_score']:.4f}, "
+                       f"XGB={model_results['xgboost']['f1_score']:.4f}, "
+                       f"LGB={model_results['lightgbm']['f1_score']:.4f}")
+            
             return best_model, model_results
             
         except Exception as e:

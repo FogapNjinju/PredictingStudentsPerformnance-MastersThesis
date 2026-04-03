@@ -1,0 +1,23 @@
+artifact_path: file:///C:/Users/User/Desktop/PredictingStudentsPerformnance-MastersThesis/mlruns/550843829589515696/models/m-54e8fb30fba94756a1b20ce4f4b9f866/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.14.0
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.8.0
+    skops_trusted_types: null
+mlflow_version: 3.10.1
+model_id: m-54e8fb30fba94756a1b20ce4f4b9f866
+model_size_bytes: 4647427
+model_uuid: m-54e8fb30fba94756a1b20ce4f4b9f866
+prompts: null
+run_id: 3230c69ea7e843fca75523b93d0f3cfb
+utc_time_created: '2026-04-03 12:37:35.010559'

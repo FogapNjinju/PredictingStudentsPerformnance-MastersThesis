@@ -1,0 +1,10 @@
+artifact_location: file:///C:/Users/User/Desktop/PredictingStudentsPerformnance-MastersThesis/mlruns/550843829589515696/models/m-54e8fb30fba94756a1b20ce4f4b9f866/artifacts
+creation_timestamp: 1775219854809
+experiment_id: '550843829589515696'
+last_updated_timestamp: 1775219865703
+model_id: m-54e8fb30fba94756a1b20ce4f4b9f866
+model_type: null
+name: model
+source_run_id: 3230c69ea7e843fca75523b93d0f3cfb
+status: 2
+status_message: null
