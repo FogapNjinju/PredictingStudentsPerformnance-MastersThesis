@@ -1,0 +1,14 @@
+assessment_id: a-377880b9f77c46379d00974abb67ecba
+assessment_name: expected_response
+create_time: '2026-04-03T12:04:03.400Z'
+expectation:
+  value: San Francisco is 62F and partly cloudy with 15% rain chance. No umbrella
+    needed, but consider a light jacket for evening fog.
+last_update_time: '2026-04-03T12:04:03.400Z'
+metadata:
+  demo: 'true'
+source:
+  source_id: demo_annotator
+  source_type: HUMAN
+trace_id: tr-a229217d2509db8f6e4e6c342812c6d7
+valid: true

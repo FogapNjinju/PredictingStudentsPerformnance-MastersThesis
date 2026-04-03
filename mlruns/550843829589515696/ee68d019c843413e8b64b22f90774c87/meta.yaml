@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/User/Desktop/PredictingStudentsPerformnance-MastersThesis/mlruns/550843829589515696/ee68d019c843413e8b64b22f90774c87/artifacts
+end_time: 1775217985501
+entry_point_name: ''
+experiment_id: '550843829589515696'
+lifecycle_stage: active
+run_id: ee68d019c843413e8b64b22f90774c87
+run_name: random_forest
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1775217985378
+status: 3
+tags: []
+user_id: User

@@ -1,0 +1,14 @@
+artifact_uri: file:///C:/Users/User/Desktop/PredictingStudentsPerformnance-MastersThesis/mlruns/550843829589515696/ae9afe2bee6d4538ad1c1cfa04259333/artifacts
+end_time: 1775218066139
+entry_point_name: ''
+experiment_id: '550843829589515696'
+lifecycle_stage: active
+run_id: ae9afe2bee6d4538ad1c1cfa04259333
+run_name: random_forest_classifier
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1775218051875
+status: 3
+tags: []
+user_id: User

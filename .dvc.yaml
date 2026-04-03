@@ -1,0 +1,39 @@
+stages:
+  prepare:
+    cmd: python src/data/prepare.py
+    deps:
+      - data/data.csv
+    outs:
+      - data/processed_data.csv
+    metrics:
+      - metrics/prepare_metrics.json:
+          cache: false
+
+  features:
+    cmd: python src/features/build_features.py
+    deps:
+      - data/processed_data.csv
+    outs:
+      - data/featured_data.csv
+    metrics:
+      - metrics/features_metrics.json:
+          cache: false
+
+  train:
+    cmd: python pipelines/train_pipeline.py
+    deps:
+      - data/featured_data.csv
+    outs:
+      - outputs/models/best_model.joblib
+    metrics:
+      - metrics/train_metrics.json:
+          cache: false
+
+  evaluate:
+    cmd: python pipelines/evaluate_pipeline.py
+    deps:
+      - outputs/models/best_model.joblib
+      - data/featured_data.csv
+    metrics:
+      - metrics/eval_metrics.json:
+          cache: false

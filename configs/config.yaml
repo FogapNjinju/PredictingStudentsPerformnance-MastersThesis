@@ -1,0 +1,74 @@
+# MLOps Configuration for Student Performance Prediction
+
+# Data Configuration
+data:
+  raw_path: "data/data.csv"
+  processed_path: "data/processed_data.csv"
+  test_size: 0.2
+  random_state: 42
+  validation_split: 0.1
+
+# Feature Engineering
+features:
+  numeric_features: []  # Will be populated from data
+  categorical_features: []  # Will be populated from data
+  target: "Target"  # Your actual target column (Dropout/Graduate)
+  drop_columns: []
+
+# Model Configuration
+model:
+  models_to_train:
+    - name: "random_forest"
+      type: "RandomForest"
+      params:
+        n_estimators: 100
+        max_depth: 10
+        random_state: 42
+    
+    - name: "xgboost"
+      type: "XGBoost"
+      params:
+        n_estimators: 100
+        max_depth: 5
+        learning_rate: 0.1
+    
+    - name: "lightgbm"
+      type: "LightGBM"
+      params:
+        n_estimators: 100
+        max_depth: 7
+        learning_rate: 0.1
+
+# Hyperparameter Tuning
+hyperparameter_tuning:
+  enabled: true
+  cv_folds: 5
+  scoring: "rmse"
+  n_trials: 20
+
+# MLflow Configuration
+mlflow:
+  tracking_uri: "http://localhost:5000"  # Change if using remote server
+  experiment_name: "student_performance"
+  registry_uri: "./mlruns"
+
+# Model Evaluation
+evaluation:
+  metrics:
+    - "rmse"
+    - "mae"
+    - "r2_score"
+    - "mape"
+  cross_validation_folds: 5
+
+# Paths
+paths:
+  models_dir: "outputs/models"
+  figures_dir: "outputs/figures"
+  reports_dir: "outputs/reports"
+  logs_dir: "logs"
+
+# Logging
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

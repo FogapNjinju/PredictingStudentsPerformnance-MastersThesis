@@ -1,0 +1,17 @@
+execution_duration_ms: 702
+request_preview: '{"query": "Create a summary of the machine learning research paper
+  for a technical blog.", "template_variables": {"audience": "technical", "max_words":
+  "200", "document": "Abstract: We present SparseFormer, a novel transformer architecture
+  that achieves state-of-the-art results while significantly reducing computational
+  requirements. Our sparse attention mechanism reduces complexity from O(n^2) to O(n
+  log n)...", "query": "Create a summary of the machine learning research paper for
+  a technical blog."}}'
+request_time: '2026-03-29T09:14:15.794Z'
+response_preview: '{"response": "The paper proposes a new transformer architecture
+  that is more efficient."}'
+state: OK
+trace_id: tr-9797848bd8681949da5b07f9fb82e0b7
+trace_location:
+  mlflow_experiment:
+    experiment_id: '532692618637241120'
+  type: MLFLOW_EXPERIMENT
